@@ -15,7 +15,7 @@
         <!-- ボタンエリア（左寄せ） -->
         <div class="pl-2">
             <!-- 出荷指示データボタン -->
-            <a href="#" class="inline-block bg-[#E26A2C] text-white font-medium px-6 py-4 rounded-xl shadow-sm hover:bg-[#d55e22] transition duration-150 text-center min-w-[160px]">
+            <a href="{{ route('shipping-instruction.index') }}" class="inline-block bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 px-8 rounded shadow text-center text-lg">
                 出荷指示データ
             </a>
         </div>
