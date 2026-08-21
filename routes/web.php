@@ -3,6 +3,8 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ShippingInstructionController;
+use App\Http\Controllers\Auth\OAuthController;
+use App\Http\Middleware\CheckGoogleLogin;
 
 Route::get('/', function () {
     return view('welcome');
@@ -18,10 +20,14 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+// 社内用OAuth認証ルート
+Route::get('/auth/redirect', [OAuthController::class, 'redirectToProvider'])->name('oauth.redirect');
+Route::get('/auth/callback', [OAuthController::class, 'handleProviderCallback'])->name('oauth.callback');
+
 require __DIR__.'/auth.php';
 
 // ログイン中のユーザーのみアクセス可能
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', CheckGoogleLogin::class])->group(function () {
     // 画面表示
     Route::get('/shipping-instruction-data', [ShippingInstructionController::class, 'index'])->name('shipping-instruction.index');
     // アップロード
