@@ -132,6 +132,11 @@ class ShippingInstructionController extends Controller
 
         $dbData = DB::table('yamato_sanchoku_shipping_instruction_data')->first();
         
+        // 汎用区分０１が『0000』として確実に出力されるよう、プログラム側でも文字列整形を徹底ガード
+        if ($dbData && isset($dbData->general_purpose_division_01)) {
+            $dbData->general_purpose_division_01 = str_pad((string)$dbData->general_purpose_division_01, 4, '0', STR_PAD_LEFT);
+        }
+        
         // hatsu_ninushi_data マスタを全件取得
         $hatsuMaster = DB::table('hatsu_ninushi_data')->get();
 
@@ -154,25 +159,32 @@ class ShippingInstructionController extends Controller
             unlink($inputFullPath);
         }
 
-        // 6. CSVダウンロードストリームの作成
+        // 6. CSVダウンロードストリームの作成（ヘッダーなし・値のある項目は""・NULLは囲みなし）
         $fileName = 'yamato_sanchoku_' . date('Ymd') . '.csv';
-        
-        $quotedHeader = array_map(function($v) {
-            return '"' . $v . '"';
-        }, $templateHeader);
 
-        $response = new StreamedResponse(function() use ($quotedHeader, $convertedRows) {
+        $response = new StreamedResponse(function() use ($convertedRows) {
             $stream = fopen('php://output', 'w');
             
-            mb_convert_variables('SJIS-WIN', 'UTF-8', $quotedHeader);
-            fwrite($stream, implode(',', $quotedHeader) . "\r\n");
+            $writeYamatoCsvRow = function($fs, $rowData) {
+                $processedFields = array_map(function($field) {
+                    if ($field === null || $field === '') {
+                        return '';
+                    }
+                    
+                    $f = trim((string)$field, '"');
+                    $f = str_replace('"', '""', $f);
+                    
+                    return '"' . $f . '"';
+                }, $rowData);
+                
+                $line = implode(',', $processedFields) . "\r\n";
+                mb_convert_variables('SJIS-WIN', 'UTF-8', $line);
+                fwrite($fs, $line);
+            };
 
+            // ヘッダー行は出力せず、データ行のみ出力
             foreach ($convertedRows as $row) {
-                mb_convert_variables('SJIS-WIN', 'UTF-8', $row);
-                $line = implode(',', array_map(function($val) {
-                    return $val ?? '';
-                }, $row));
-                fwrite($stream, $line . "\r\n");
+                $writeYamatoCsvRow($stream, $row);
             }
             
             fclose($stream);
