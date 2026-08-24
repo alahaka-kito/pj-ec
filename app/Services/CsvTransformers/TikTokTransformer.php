@@ -16,7 +16,7 @@ class TikTokTransformer
         $hatsuMaster, 
         int $hatsuIdx
     ): array {
-        // TikTok用のマッピング項目定義（現状のCSVヘッダー名と完全一致で探す設定）
+        // TikTok用のマッピング項目定義
         $tiktokMapping = [
             '注文ID'       => '注文ID',
             '注文作成時刻' => '注文作成時刻',
@@ -25,7 +25,7 @@ class TikTokTransformer
             '郵便番号'     => '郵便番号',
             '電話番号'     => '電話番号',
             '受取人'       => '受取人',
-            'SKU ID'       => 'SKU ID',
+            'SKU ID'       => 'SKUID',
         ];
 
         // 文字コードをUTF-8にクリーニングしながら正確に列を特定する
@@ -180,15 +180,7 @@ class TikTokTransformer
             if ($tiktokIdx['詳細住所2'] !== false) $address2 .= $row[$tiktokIdx['詳細住所2']] ?? '';
             if ($address2 !== '') $newRow[15] = $address2;
 
-            // クォーテーション囲み処理
-            $quotedRow = array_map(function($value) {
-                if ($value === null || $value === '') return null;
-                $valueStr = (string)$value;
-                if (str_starts_with($valueStr, '"') && str_ends_with($valueStr, '"')) return $valueStr;
-                return '"' . $valueStr . '"';
-            }, $newRow);
-
-            $results[] = $quotedRow;
+            $results[] = $newRow;
         }
 
         return $results;
