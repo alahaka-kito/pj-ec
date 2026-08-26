@@ -13,22 +13,33 @@
             ECツール
         </div>
 
-        <!-- オレンジの「機能」ヘッダーバー -->
-        <div class="relative w-full border-b-2 border-[#E26A2C] mb-8">
-            <div class="inline-block bg-[#E26A2C] text-white text-xl px-12 py-2 tracking-wider border border-green-800">
-                機能
+        <!-- Googleログインユーザーのみ表示する領域 -->
+        @if(Auth::user() && Auth::user()->login_type === 'google')
+            
+            <div class="relative w-full border-b-2 border-[#E26A2C] mb-8">
+                <div class="inline-block w-72 bg-[#E26A2C] text-white text-xl py-2 tracking-wider border border-green-800 text-center">
+                    機能
+                </div>
             </div>
-        </div>
 
-        <!-- ボタンエリア（左寄せ） -->
-        <div class="pl-2">
-            <!-- Googleログインユーザーのみ「出荷指示データボタン」を表示する -->
-            @if(Auth::user() && Auth::user()->login_type === 'google')
-                <!-- 出荷指示データボタン -->
-                <a href="{{ route('shipping-instruction.index') }}" class="inline-block bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 px-8 rounded shadow text-center text-lg">
+            <div class="pl-2 mb-12">
+                <a href="{{ route('shipping-instruction.index') }}" class="inline-block w-44 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded shadow text-center text-base">
                     出荷指示データ
                 </a>
-            @endif
-        </div>
+            </div>
+
+            <div class="relative w-full border-b-2 border-[#E26A2C] mb-8">
+                <div class="inline-block w-72 bg-[#E26A2C] text-white text-xl py-2 tracking-wider border border-green-800 text-center">
+                    マスタメンテナンス
+                </div>
+            </div>
+
+            <div class="pl-2">
+                <a href="{{ route('supplier-master.index') }}" class="inline-block w-44 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded shadow text-center text-base">
+                    仕入先マスタ
+                </a>
+            </div>
+
+        @endif
     </div>
 </x-app-layout>

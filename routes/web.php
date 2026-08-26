@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ShippingInstructionController;
 use App\Http\Controllers\Auth\OAuthController;
 use App\Http\Middleware\CheckGoogleLogin;
+use App\Http\Controllers\SupplierMasterController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -34,4 +35,8 @@ Route::middleware(['auth', 'verified', CheckGoogleLogin::class])->group(function
     Route::post('/shipping-instruction-data/upload', [ShippingInstructionController::class, 'upload'])->name('shipping-instruction.upload');
     // 処理実行＆ダウンロード
     Route::post('/shipping-instruction-data/process', [ShippingInstructionController::class, 'process'])->name('shipping-instruction.process');
+
+    Route::resource('supplier-master', SupplierMasterController::class)->parameters([
+        'supplier-master' => 'seq'
+    ]);
 });
