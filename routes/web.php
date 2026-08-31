@@ -6,6 +6,7 @@ use App\Http\Controllers\ShippingInstructionController;
 use App\Http\Controllers\Auth\OAuthController;
 use App\Http\Middleware\CheckGoogleLogin;
 use App\Http\Controllers\SupplierMasterController;
+use App\Http\Controllers\ProductMasterController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -36,7 +37,13 @@ Route::middleware(['auth', 'verified', CheckGoogleLogin::class])->group(function
     // 処理実行＆ダウンロード
     Route::post('/shipping-instruction-data/process', [ShippingInstructionController::class, 'process'])->name('shipping-instruction.process');
 
+    //仕入先マスタ
     Route::resource('supplier-master', SupplierMasterController::class)->parameters([
         'supplier-master' => 'seq'
+    ]);
+
+    //商品マスタ
+    Route::resource('product-master', ProductMasterController::class)->parameters([
+        'product-master' => 'seq'
     ]);
 });
