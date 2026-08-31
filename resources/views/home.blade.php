@@ -34,9 +34,13 @@
                 </div>
             </div>
 
-            <div class="pl-2">
+            <div class="pl-2 flex gap-4">
                 <a href="{{ route('supplier-master.index') }}" class="inline-block w-44 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded shadow text-center text-base">
                     仕入先マスタ
+                </a>
+                
+                <a href="{{ route('product-master.index') }}" class="inline-block w-44 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded shadow text-center text-base">
+                    商品マスタ
                 </a>
             </div>
 
