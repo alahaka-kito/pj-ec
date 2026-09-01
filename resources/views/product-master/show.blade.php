@@ -40,13 +40,6 @@
                             @endif
                         </td>
                     </tr>
-                    <!-- 商品管理コード -->
-                    <tr class="border-b border-gray-200">
-                        <th class="bg-gray-50 p-4 font-medium text-gray-700 align-middle border-r border-gray-200">商品管理コード</th>
-                        <td class="p-4 align-middle font-mono font-medium text-gray-900 text-base">
-                            {{ $product->product_management_code }}
-                        </td>
-                    </tr>
                     <!-- 仕入先管理コード -->
                     <tr class="border-b border-gray-200">
                         <th class="bg-gray-50 p-4 font-medium text-gray-700 align-middle border-r border-gray-200">仕入先管理コード</th>
@@ -55,6 +48,13 @@
                             @if($product->supplier)
                                 <span class="text-xs text-gray-500">（{{ $product->supplier->company_name }}）</span>
                             @endif
+                        </td>
+                    </tr>
+                    <!-- 商品管理コード -->
+                    <tr class="border-b border-gray-200">
+                        <th class="bg-gray-50 p-4 font-medium text-gray-700 align-middle border-r border-gray-200">商品管理コード</th>
+                        <td class="p-4 align-middle font-mono font-medium text-gray-900 text-base">
+                            {{ $product->product_management_code }}
                         </td>
                     </tr>
                     <!-- 仕入先商品名 -->
@@ -71,21 +71,37 @@
                             ¥{{ number_format($product->buying_price) }}
                         </td>
                     </tr>
-
+                    <!-- 商品サイズ -->
                     <tr class="border-b border-gray-200">
-                        <th class="bg-gray-50 p-4 font-medium text-gray-700 align-middle border-r border-gray-200">ドライブパス</th>
-                        <td class="p-4 align-middle">
-                            @if($product->drive_path)
-                                <a href="{{ $product->drive_path }}" target="_blank" class="text-blue-600 hover:underline font-mono text-xs break-all block">
-                                    {{ $product->drive_path }}
-                                </a>
+                        <th class="bg-gray-50 p-4 font-medium text-gray-700 align-middle border-r border-gray-200">商品サイズ</th>
+                        <td class="p-4 align-middle font-mono text-gray-900">
+                            {{ $product->size ? $product->size . 'サイズ' : '-' }}
+                        </td>
+                    </tr>
+                    <!-- クール宅急便 -->
+                    <tr class="border-b border-gray-200">
+                        <th class="bg-gray-50 p-4 font-medium text-gray-700 align-middle border-r border-gray-200">クール宅急便</th>
+                        <td class="p-4 align-middle text-gray-800">
+                            @if($product->cool_delivery_service == 1)
+                                <span class="bg-amber-100 text-amber-800 font-bold px-3 py-1 rounded text-xs">使用</span>
                             @else
-                                <span class="text-gray-400">-</span>
+                                <span class="text-gray-500">不使用</span>
+                            @endif
+                        </td>
+                    </tr>
+                    <!-- 宅急便タイムサービス -->
+                    <tr class="border-b border-gray-200">
+                        <th class="bg-gray-50 p-4 font-medium text-gray-700 align-middle border-r border-gray-200">宅急便タイムサービス</th>
+                        <td class="p-4 align-middle text-gray-800">
+                            @if($product->time_delivery_service == 1)
+                                <span class="bg-amber-100 text-amber-800 font-bold px-3 py-1 rounded text-xs">使用</span>
+                            @else
+                                <span class="text-gray-500">不使用</span>
                             @endif
                         </td>
                     </tr>
                     <!-- 販売先 -->
-                    <tr>
+                    <tr class="border-b border-gray-200">
                         <th class="bg-gray-50 p-4 font-medium text-gray-700 align-top border-r border-gray-200 pt-5">販売先</th>
                         <td class="p-4 align-middle">
                             @if(!empty($product->selling_places) && is_array($product->selling_places))
@@ -98,6 +114,19 @@
                                 </div>
                             @else
                                 <span class="text-gray-400 italic text-xs">登録されている販売先はありません。</span>
+                            @endif
+                        </td>
+                    </tr>
+                    <!-- ドライブパス -->
+                    <tr>
+                        <th class="bg-gray-50 p-4 font-medium text-gray-700 align-middle border-r border-gray-200">ドライブパス</th>
+                        <td class="p-4 align-middle">
+                            @if($product->drive_path)
+                                <a href="{{ $product->drive_path }}" target="_blank" class="text-blue-600 hover:underline font-mono text-xs break-all block">
+                                    {{ $product->drive_path }}
+                                </a>
+                            @else
+                                <span class="text-gray-400">-</span>
                             @endif
                         </td>
                     </tr>
