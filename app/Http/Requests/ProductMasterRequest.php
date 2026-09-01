@@ -36,6 +36,9 @@ class ProductMasterRequest extends FormRequest
             'product_management_code' => 'required|string|max:50',
             'supplier_product_name'   => 'required|string|max:255',
             'buying_price'            => 'required|integer|min:0',
+            'size'                    => 'required|integer|in:60,80,100,120,140,160,180,200',
+            'cool_delivery_service'   => 'nullable|boolean',
+            'time_delivery_service'   => 'nullable|boolean',
             'drive_path'              => 'nullable|url|max:512',
             'selling_places'          => 'nullable|array',
         ];
@@ -54,6 +57,7 @@ class ProductMasterRequest extends FormRequest
             'product_management_code.required' => ':attributeは必須項目です。',
             'supplier_product_name.required'   => ':attributeは必須項目です。',
             'buying_price.required'            => ':attributeは必須項目です。',
+            'size.required'                    => ':attributeは必須項目です。',
 
             // その他の形式チェック用の日本語メッセージ
             'image.image'                      => '商品画像には画像ファイルを指定してください。',
@@ -64,6 +68,7 @@ class ProductMasterRequest extends FormRequest
             'supplier_product_name.max'        => '仕入先商品名は255文字以内で入力してください。',
             'buying_price.integer'             => '仕入れ値は整数で入力してください。',
             'buying_price.min'                 => '仕入れ値は0以上の数値を入力してください。',
+            'size.in'                          => '商品サイズは選択肢の中から指定してください。',
             'drive_path.url'                   => 'ドライブパスには有効なURLを入力してください。',
             'drive_path.max'                   => 'ドライブパスは512文字以内で入力してください。',
         ];
@@ -82,6 +87,9 @@ class ProductMasterRequest extends FormRequest
             'product_management_code' => '商品管理コード',
             'supplier_product_name'   => '仕入先商品名',
             'buying_price'            => '仕入れ値',
+            'size'                    => '商品サイズ',
+            'cool_delivery_service'   => 'クール宅急便',
+            'time_delivery_service'   => '宅急便タイムサービス',
             'drive_path'              => 'ドライブパス',
             'selling_places'          => '販売先',
         ];

@@ -19,12 +19,18 @@ class ProductMaster extends Model
         'product_management_code',
         'supplier_product_name',
         'buying_price',
+        'size',
+        'cool_delivery_service',
+        'time_delivery_service',
         'drive_path',
         'selling_places',
     ];
 
     protected $casts = [
-        'selling_places' => 'array',
+        'selling_places'        => 'array',
+        'size'                  => 'integer',
+        'cool_delivery_service' => 'integer',
+        'time_delivery_service' => 'integer',
     ];
 
     /**

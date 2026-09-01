@@ -55,17 +55,20 @@
 
         {{-- 商品一覧テーブル --}}
         <div class="border border-gray-200 rounded shadow-sm overflow-x-auto bg-white">
-            <table class="w-full text-left border-collapse min-w-[1050px]">
+            <table class="w-full text-left border-collapse min-w-[1200px] table-fixed">
                 <thead>
-                    <tr class="bg-gray-50 border-b border-gray-200 text-gray-600 text-xs uppercase tracking-wider">
-                        <th class="p-3 font-medium text-center w-24">画像</th>
-                        <th class="p-3 font-medium">仕入先管理コード</th>
-                        <th class="p-3 font-medium">商品管理コード</th>
-                        <th class="p-3 font-medium">仕入先商品名</th>
-                        <th class="p-3 font-medium">仕入値</th>
-                        <th class="p-3 font-medium">販売先</th>
-                        <th class="p-3 font-medium">ドライブパス</th>
-                        <th class="p-3 font-medium text-center w-36">操作</th>
+                    <tr class="bg-gray-50 border-b border-gray-200 text-gray-600 text-xs uppercase tracking-wider whitespace-nowrap">
+                        <th class="p-3 font-medium text-center w-16">画像</th>
+                        <th class="p-3 font-medium w-36">仕入先管理コード</th>
+                        <th class="p-3 font-medium w-36">商品管理コード</th>
+                        <th class="p-3 font-medium w-64">仕入先商品名</th>
+                        <th class="p-3 font-medium w-24">仕入値</th>
+                        <th class="p-3 font-medium text-center w-16">サイズ</th>
+                        <th class="p-3 font-medium text-center w-28">クール宅急便</th>
+                        <th class="p-3 font-medium text-center w-36">宅急便タイムサービス</th>
+                        <th class="p-3 font-medium w-40">販売先</th>
+                        <th class="p-3 font-medium w-44">ドライブパス</th>
+                        <th class="p-3 font-medium text-center w-32">操作</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 text-xs">
@@ -74,33 +77,53 @@
                             <!-- 画像 -->
                             <td class="p-3 align-middle text-center">
                                 @if($product->image_path)
-                                    <img src="{{ $product->image_path }}" class="w-12 h-12 object-cover rounded border border-gray-200 inline-block">
+                                    <img src="{{ $product->image_path }}" class="w-10 h-10 object-cover rounded border border-gray-200 inline-block">
                                 @else
                                     <span class="text-gray-400 font-mono text-[10px]">No Image</span>
                                 @endif
                             </td>
                             <!-- 仕入先管理コード -->
-                            <td class="p-3 align-middle font-mono font-medium text-gray-700">
+                            <td class="p-3 align-middle font-mono font-medium text-gray-700 whitespace-nowrap">
                                 {{ $product->management_code }}
                             </td>
                             <!-- 商品管理コード -->
-                            <td class="p-3 align-middle font-mono font-medium text-gray-900">
+                            <td class="p-3 align-middle font-mono font-medium text-gray-900 whitespace-nowrap">
                                 {{ $product->product_management_code }}
                             </td>
                             <!-- 仕入先商品名 -->
-                            <td class="p-3 align-middle text-gray-700 max-w-xs truncate" title="{{ $product->supplier_product_name }}">
+                            <td class="p-3 align-middle text-gray-700 truncate" title="{{ $product->supplier_product_name }}">
                                 {{ $product->supplier_product_name }}
                             </td>
                             <!-- 仕入値 -->
-                            <td class="p-3 align-middle font-mono font-medium text-gray-800">
+                            <td class="p-3 align-middle font-mono font-medium text-gray-800 whitespace-nowrap">
                                 ¥{{ number_format($product->buying_price) }}
+                            </td>
+                            <!-- 商品サイズ -->
+                            <td class="p-3 align-middle text-center font-mono font-medium text-gray-800 whitespace-nowrap">
+                                {{ $product->size ? $product->size . 'サイズ' : '-' }}
+                            </td>
+                            <!-- クール宅急便 -->
+                            <td class="p-3 align-middle text-center whitespace-nowrap">
+                                @if($product->cool_delivery_service == 1)
+                                    <span class="bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded text-[11px]">使用</span>
+                                @else
+                                    <span class="text-gray-400">不使用</span>
+                                @endif
+                            </td>
+                            <!-- 宅急便タイムサービス -->
+                            <td class="p-3 align-middle text-center whitespace-nowrap">
+                                @if($product->time_delivery_service == 1)
+                                    <span class="bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded text-[11px]">使用</span>
+                                @else
+                                    <span class="text-gray-400">不使用</span>
+                                @endif
                             </td>
                             <!-- 販売先 -->
                             <td class="p-3 align-middle">
                                 @if(!empty($product->selling_places) && is_array($product->selling_places))
                                     <div class="flex flex-wrap gap-1">
                                         @foreach($product->selling_places as $place)
-                                            <span class="bg-orange-50 text-orange-700 px-2 py-0.5 rounded border border-orange-200 font-medium text-[11px]">
+                                            <span class="bg-orange-50 text-orange-700 px-1.5 py-0.5 rounded border border-orange-200 font-medium text-[11px] whitespace-nowrap">
                                                 {{ $place }}
                                             </span>
                                         @endforeach
@@ -110,15 +133,16 @@
                                 @endif
                             </td>
                             <!-- ドライブパス -->
-                            <td class="p-3 align-middle max-w-xs truncate">
+                            <td class="p-3 align-middle max-w-xs">
                                 @if($product->drive_path)
-                                    <a href="{{ $product->drive_path }}" target="_blank" class="text-blue-500 hover:underline font-mono text-[11px] block truncate">
+                                    <a href="{{ $product->drive_path }}" target="_blank" class="text-blue-500 hover:underline font-mono text-[11px] block truncate" title="{{ $product->drive_path }}">
                                         {{ $product->drive_path }}
                                     </a>
                                 @else
                                     <span class="text-gray-400">-</span>
                                 @endif
                             </td>
+                            <!-- 操作ボタン -->
                             <td class="p-3 align-middle text-center whitespace-nowrap">
                                 <div class="flex items-center justify-center gap-1.5">
                                     <a href="{{ route('product-master.show', $product->seq) }}" class="inline-block bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-1 px-3 rounded border border-slate-300 transition duration-150">
@@ -136,7 +160,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="p-8 text-center text-gray-400 bg-gray-50">
+                            <td colspan="11" class="p-8 text-center text-gray-400 bg-gray-50">
                                 該当する商品データが見つかりません。
                             </td>
                         </tr>
