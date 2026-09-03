@@ -76,6 +76,9 @@ class ProductMasterController extends Controller
         $validated = $request->validated();
         $validated['selling_places'] = $request->input('selling_places', []);
 
+        // 在庫数が未入力の場合は0をセット
+        $validated['stock'] = $request->filled('stock') ? $request->input('stock') : 0;
+
         // チェックボックス（未チェック時は0をセット）
         $validated['cool_delivery_service'] = $request->boolean('cool_delivery_service') ? 1 : 0;
         $validated['time_delivery_service'] = $request->boolean('time_delivery_service') ? 1 : 0;
@@ -134,6 +137,9 @@ class ProductMasterController extends Controller
         $product = ProductMaster::findOrFail($seq);
         $validated = $request->validated();
         $validated['selling_places'] = $request->input('selling_places', []);
+
+        // 在庫数が未入力の場合は0をセット
+        $validated['stock'] = $request->filled('stock') ? $request->input('stock') : 0;
 
         // チェックボックス（未チェック時は0をセット）
         $validated['cool_delivery_service'] = $request->boolean('cool_delivery_service') ? 1 : 0;

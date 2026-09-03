@@ -16,16 +16,6 @@
     </head>
     <body class="font-sans antialiased bg-white m-0 p-0">
         <div class="min-h-screen bg-white">
-            <!-- 右上のログアウトボタンエリア -->
-            <div class="flex justify-end p-4">
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit" class="text-sm text-gray-600 hover:text-gray-900 underline font-medium">
-                        ログアウト
-                    </button>
-                </form>
-            </div>
-
             <!-- メインコンテンツ -->
             <main>
                 {{ $slot }}

@@ -29,7 +29,6 @@
         <div class="max-w-4xl border border-gray-200 rounded-sm overflow-hidden shadow-sm bg-white mb-6">
             <table class="w-full text-left table-fixed border-collapse">
                 <tbody>
-                    <!-- 商品画像 -->
                     <tr class="border-b border-gray-200">
                         <th class="w-1/4 bg-gray-50 p-4 font-medium text-gray-700 align-top border-r border-gray-200">商品画像</th>
                         <td class="w-3/4 p-4 align-middle">
@@ -40,7 +39,6 @@
                             @endif
                         </td>
                     </tr>
-                    <!-- 仕入先管理コード -->
                     <tr class="border-b border-gray-200">
                         <th class="bg-gray-50 p-4 font-medium text-gray-700 align-middle border-r border-gray-200">仕入先管理コード</th>
                         <td class="p-4 align-middle text-gray-800">
@@ -50,35 +48,36 @@
                             @endif
                         </td>
                     </tr>
-                    <!-- 商品管理コード -->
                     <tr class="border-b border-gray-200">
                         <th class="bg-gray-50 p-4 font-medium text-gray-700 align-middle border-r border-gray-200">商品管理コード</th>
                         <td class="p-4 align-middle font-mono font-medium text-gray-900 text-base">
                             {{ $product->product_management_code }}
                         </td>
                     </tr>
-                    <!-- 仕入先商品名 -->
                     <tr class="border-b border-gray-200">
                         <th class="bg-gray-50 p-4 font-medium text-gray-700 align-middle border-r border-gray-200">仕入先商品名</th>
                         <td class="p-4 align-middle text-gray-800 font-medium text-base">
                             {{ $product->supplier_product_name }}
                         </td>
                     </tr>
-                    <!-- 仕入れ値 -->
                     <tr class="border-b border-gray-200">
                         <th class="bg-gray-50 p-4 font-medium text-gray-700 align-middle border-r border-gray-200">仕入れ値</th>
                         <td class="p-4 align-middle font-mono font-bold text-gray-900 text-base tracking-wide">
                             ¥{{ number_format($product->buying_price) }}
                         </td>
                     </tr>
-                    <!-- 商品サイズ -->
+                    <tr class="border-b border-gray-200">
+                        <th class="bg-gray-50 p-4 font-medium text-gray-700 align-middle border-r border-gray-200">在庫数</th>
+                        <td class="p-4 align-middle font-mono font-bold text-gray-900 text-base tracking-wide">
+                            {{ number_format($product->stock ?? 0) }}
+                        </td>
+                    </tr>
                     <tr class="border-b border-gray-200">
                         <th class="bg-gray-50 p-4 font-medium text-gray-700 align-middle border-r border-gray-200">商品サイズ</th>
                         <td class="p-4 align-middle font-mono text-gray-900">
                             {{ $product->size ? $product->size . 'サイズ' : '-' }}
                         </td>
                     </tr>
-                    <!-- クール宅急便 -->
                     <tr class="border-b border-gray-200">
                         <th class="bg-gray-50 p-4 font-medium text-gray-700 align-middle border-r border-gray-200">クール宅急便</th>
                         <td class="p-4 align-middle text-gray-800">
@@ -89,7 +88,6 @@
                             @endif
                         </td>
                     </tr>
-                    <!-- 宅急便タイムサービス -->
                     <tr class="border-b border-gray-200">
                         <th class="bg-gray-50 p-4 font-medium text-gray-700 align-middle border-r border-gray-200">宅急便タイムサービス</th>
                         <td class="p-4 align-middle text-gray-800">
@@ -100,7 +98,6 @@
                             @endif
                         </td>
                     </tr>
-                    <!-- 販売先 -->
                     <tr class="border-b border-gray-200">
                         <th class="bg-gray-50 p-4 font-medium text-gray-700 align-top border-r border-gray-200 pt-5">販売先</th>
                         <td class="p-4 align-middle">
@@ -117,7 +114,6 @@
                             @endif
                         </td>
                     </tr>
-                    <!-- ドライブパス -->
                     <tr>
                         <th class="bg-gray-50 p-4 font-medium text-gray-700 align-middle border-r border-gray-200">ドライブパス</th>
                         <td class="p-4 align-middle">

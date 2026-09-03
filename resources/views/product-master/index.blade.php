@@ -63,6 +63,7 @@
                         <th class="p-3 font-medium w-36">商品管理コード</th>
                         <th class="p-3 font-medium w-64">仕入先商品名</th>
                         <th class="p-3 font-medium w-24">仕入値</th>
+                        <th class="p-3 font-medium text-right w-20">在庫数</th>
                         <th class="p-3 font-medium text-center w-16">サイズ</th>
                         <th class="p-3 font-medium text-center w-28">クール宅急便</th>
                         <th class="p-3 font-medium text-center w-36">宅急便タイムサービス</th>
@@ -97,6 +98,10 @@
                             <!-- 仕入値 -->
                             <td class="p-3 align-middle font-mono font-medium text-gray-800 whitespace-nowrap">
                                 ¥{{ number_format($product->buying_price) }}
+                            </td>
+                            <!-- 在庫数（font-boldからfont-mediumに変更） -->
+                            <td class="p-3 align-middle text-right font-mono font-medium text-gray-800 whitespace-nowrap">
+                                {{ number_format($product->stock ?? 0) }}
                             </td>
                             <!-- 商品サイズ -->
                             <td class="p-3 align-middle text-center font-mono font-medium text-gray-800 whitespace-nowrap">
@@ -160,7 +165,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="11" class="p-8 text-center text-gray-400 bg-gray-50">
+                            <td colspan="12" class="p-8 text-center text-gray-400 bg-gray-50">
                                 該当する商品データが見つかりません。
                             </td>
                         </tr>
