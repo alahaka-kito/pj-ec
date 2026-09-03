@@ -40,50 +40,67 @@
                         <tr class="border-b border-gray-200">
                             <th class="w-1/4 bg-gray-50 p-3 font-medium text-gray-700 align-middle border-r border-gray-200">商品画像</th>
                             <td class="w-3/4 p-3 align-middle">
-                                <input type="file" name="image" accept="image/*" class="w-full text-xs text-gray-500 file:mr-4 file:py-1.5 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100">
+                                <input type="file" name="image" accept="image/*" class="text-xs text-gray-500 file:mr-4 file:py-1.5 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100">
                             </td>
                         </tr>
                         <tr class="border-b border-gray-200">
-                            <th class="bg-gray-50 p-3 font-medium text-gray-700 align-middle border-r border-gray-200">仕入先管理コード <span class="text-red-500 text-xs">*</span></th>
+                            <th class="bg-gray-50 p-3 font-medium text-gray-700 align-middle border-r border-gray-200">
+                                仕入先管理コード <span class="text-red-500">*</span>
+                            </th>
                             <td class="p-3 align-middle">
-                                <select id="management_code" name="management_code" class="w-full max-w-xs border border-gray-300 rounded px-3 py-1.5 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-sm font-mono">
+                                <select name="management_code" id="management_code" class="w-full max-w-md border border-gray-300 rounded px-2 py-1.5 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-xs font-mono" required>
                                     <option value="">選択してください</option>
                                     @foreach($suppliers as $supplier)
                                         <option value="{{ $supplier->management_code }}" {{ old('management_code') == $supplier->management_code ? 'selected' : '' }}>
-                                            {{ $supplier->management_code }} ({{ $supplier->company_name }})
+                                            {{ $supplier->management_code }}（{{ $supplier->company_name }}）
                                         </option>
                                     @endforeach
                                 </select>
                             </td>
                         </tr>
                         <tr class="border-b border-gray-200">
-                            <th class="bg-gray-50 p-3 font-medium text-gray-700 align-middle border-r border-gray-200">商品管理コード <span class="text-red-500 text-xs">*</span></th>
+                            <th class="bg-gray-50 p-3 font-medium text-gray-700 align-middle border-r border-gray-200">
+                                商品管理コード <span class="text-red-500">*</span>
+                            </th>
                             <td class="p-3 align-middle">
-                                <input type="text" name="product_management_code" value="{{ old('product_management_code') }}" class="w-full max-w-sm border border-gray-300 rounded px-3 py-1.5 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-sm font-mono" placeholder="">
+                                <input type="text" name="product_management_code" value="{{ old('product_management_code') }}" class="w-full max-w-md border border-gray-300 rounded px-2 py-1.5 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-xs font-mono" required placeholder="">
                             </td>
                         </tr>
                         <tr class="border-b border-gray-200">
-                            <th class="bg-gray-50 p-3 font-medium text-gray-700 align-middle border-r border-gray-200">仕入先商品名 <span class="text-red-500 text-xs">*</span></th>
+                            <th class="bg-gray-50 p-3 font-medium text-gray-700 align-middle border-r border-gray-200">
+                                仕入先商品名 <span class="text-red-500">*</span>
+                            </th>
                             <td class="p-3 align-middle">
-                                <input type="text" name="supplier_product_name" value="{{ old('supplier_product_name') }}" class="w-full border border-gray-300 rounded px-3 py-1.5 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-sm" placeholder="">
+                                <input type="text" name="supplier_product_name" value="{{ old('supplier_product_name') }}" class="w-full border border-gray-300 rounded px-2 py-1.5 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-xs" required placeholder="">
                             </td>
                         </tr>
                         <tr class="border-b border-gray-200">
-                            <th class="bg-gray-50 p-3 font-medium text-gray-700 align-middle border-r border-gray-200">仕入れ値 <span class="text-red-500 text-xs">*</span></th>
+                            <th class="bg-gray-50 p-3 font-medium text-gray-700 align-middle border-r border-gray-200">
+                                仕入れ値 <span class="text-red-500">*</span>
+                            </th>
                             <td class="p-3 align-middle">
-                                <div class="flex items-center">
-                                    <span class="text-gray-500 mr-2">¥</span>
-                                    <input type="number" name="buying_price" value="{{ old('buying_price') }}" class="w-full max-w-xs border border-gray-300 rounded px-3 py-1.5 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-sm font-mono text-right" placeholder="0">
+                                <div class="flex items-center gap-2">
+                                    <input type="number" name="buying_price" value="{{ old('buying_price') }}" min="0" class="w-40 border border-gray-300 rounded px-2 py-1.5 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-xs font-mono" required placeholder="0">
                                 </div>
                             </td>
                         </tr>
                         <tr class="border-b border-gray-200">
-                            <th class="bg-gray-50 p-3 font-medium text-gray-700 align-middle border-r border-gray-200">商品サイズ <span class="text-red-500 text-xs">*</span></th>
+                            <th class="bg-gray-50 p-3 font-medium text-gray-700 align-middle border-r border-gray-200">
+                                在庫数
+                            </th>
                             <td class="p-3 align-middle">
-                                <select name="size" class="w-full max-w-xs border border-gray-300 rounded px-3 py-1.5 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-sm font-mono">
+                                <input type="number" name="stock" value="{{ old('stock', 0) }}" min="0" class="w-40 border border-gray-300 rounded px-2 py-1.5 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-xs font-mono" placeholder="0">
+                            </td>
+                        </tr>
+                        <tr class="border-b border-gray-200">
+                            <th class="bg-gray-50 p-3 font-medium text-gray-700 align-middle border-r border-gray-200">
+                                商品サイズ <span class="text-red-500">*</span>
+                            </th>
+                            <td class="p-3 align-middle">
+                                <select name="size" class="w-40 border border-gray-300 rounded px-2 py-1.5 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-xs font-mono" required>
                                     <option value="">選択してください</option>
-                                    @foreach([60, 80, 100, 120, 140, 160, 180, 200] as $s)
-                                        <option value="{{ $s }}" {{ old('size') == $s ? 'selected' : '' }}>{{ $s }}サイズ</option>
+                                    @foreach([60, 80, 100, 120, 140, 160, 180, 200] as $sz)
+                                        <option value="{{ $sz }}" {{ old('size') == $sz ? 'selected' : '' }}>{{ $sz }}サイズ</option>
                                     @endforeach
                                 </select>
                             </td>
@@ -91,33 +108,33 @@
                         <tr class="border-b border-gray-200">
                             <th class="bg-gray-50 p-3 font-medium text-gray-700 align-middle border-r border-gray-200">クール宅急便</th>
                             <td class="p-3 align-middle">
-                                <label class="inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" name="cool_delivery_service" value="1" {{ old('cool_delivery_service') ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500 h-4 w-4">
-                                    <span class="ml-2 text-xs font-medium text-gray-700">使用する</span>
+                                <label class="inline-flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" name="cool_delivery_service" value="1" {{ old('cool_delivery_service') ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
+                                    <span class="text-xs text-gray-700 font-medium">使用する</span>
                                 </label>
                             </td>
                         </tr>
                         <tr class="border-b border-gray-200">
                             <th class="bg-gray-50 p-3 font-medium text-gray-700 align-middle border-r border-gray-200">宅急便タイムサービス</th>
                             <td class="p-3 align-middle">
-                                <label class="inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" name="time_delivery_service" value="1" {{ old('time_delivery_service') ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500 h-4 w-4">
-                                    <span class="ml-2 text-xs font-medium text-gray-700">使用する</span>
+                                <label class="inline-flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" name="time_delivery_service" value="1" {{ old('time_delivery_service') ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
+                                    <span class="text-xs text-gray-700 font-medium">使用する</span>
                                 </label>
                             </td>
                         </tr>
                         <tr class="border-b border-gray-200">
                             <th class="bg-gray-50 p-3 font-medium text-gray-700 align-top border-r border-gray-200 pt-4">販売先</th>
                             <td class="p-3 align-middle">
-                                <div id="selling-places-container" class="flex flex-wrap gap-4 min-h-[32px] items-center">
-                                    <span class="text-gray-400 italic text-xs">仕入先管理コードを選択してください。</span>
+                                <div id="selling-places-container" class="flex flex-wrap gap-4">
+                                    <span class="text-xs text-gray-400 italic">仕入先管理コードを選択すると販売先の選択肢が表示されます。</span>
                                 </div>
                             </td>
                         </tr>
                         <tr>
-                            <th class="bg-gray-50 p-3 font-medium text-gray-700 align-middle border-r border-gray-200">ドライブパス（URL）</th>
+                            <th class="bg-gray-50 p-3 font-medium text-gray-700 align-middle border-r border-gray-200">ドライブパス</th>
                             <td class="p-3 align-middle">
-                                <input type="url" name="drive_path" value="{{ old('drive_path') }}" class="w-full border border-gray-300 rounded px-3 py-1.5 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-sm font-mono" placeholder="https://">
+                                <input type="url" name="drive_path" value="{{ old('drive_path') }}" class="w-full border border-gray-300 rounded px-2 py-1.5 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-xs font-mono" placeholder="https://drive.google.com/...">
                             </td>
                         </tr>
                     </tbody>
@@ -129,52 +146,45 @@
                     登録
                 </button>
                 <a href="{{ route('product-master.index') }}" class="bg-slate-300 hover:bg-slate-400 text-slate-700 font-bold py-2 px-10 rounded shadow-sm text-center transition duration-150 tracking-wider">
-                    キャンセル
+                    戻る
                 </a>
             </div>
         </form>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const supplierMap = JSON.parse(document.getElementById('supplier-json-data').value || '{}');
-            const oldSellingPlaces = JSON.parse(document.getElementById('old-selling-places').value || '[]');
-            const selectEl = document.getElementById('management_code');
+        document.addEventListener('DOMContentLoaded', function() {
+            const supplierSelect = document.getElementById('management_code');
             const container = document.getElementById('selling-places-container');
+            const supplierData = JSON.parse(document.getElementById('supplier-json-data').value || '{}');
+            const oldPlaces = JSON.parse(document.getElementById('old-selling-places').value || '[]');
 
-            function updateCheckboxes() {
-                const selectedCode = selectEl.value;
-                const allowedPlaces = supplierMap[selectedCode] || [];
-
+            function updateSellingPlaces() {
+                const code = supplierSelect.value;
                 container.innerHTML = '';
 
-                if (!selectedCode) {
-                    container.innerHTML = '<span class="text-gray-400 italic text-xs">仕入先管理コードを選択してください。</span>';
+                if (!code || !supplierData[code] || supplierData[code].length === 0) {
+                    container.innerHTML = '<span class="text-xs text-gray-400 italic">選択した仕入先に登録されている販売先がありません。</span>';
                     return;
                 }
 
-                if (allowedPlaces.length === 0) {
-                    container.innerHTML = '<span class="text-gray-400 italic text-xs">この仕入先に登録されている販売先がありません。</span>';
-                    return;
-                }
-
-                allowedPlaces.forEach(market => {
+                supplierData[code].forEach(place => {
                     const label = document.createElement('label');
-                    label.className = 'inline-flex items-center cursor-pointer';
+                    label.className = 'inline-flex items-center gap-1.5 cursor-pointer';
 
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
                     checkbox.name = 'selling_places[]';
-                    checkbox.value = market;
-                    checkbox.className = 'rounded border-gray-300 text-orange-500 focus:ring-orange-500 h-4 w-4';
+                    checkbox.value = place;
+                    checkbox.className = 'rounded border-gray-300 text-orange-500 focus:ring-orange-500';
 
-                    if (oldSellingPlaces.includes(market)) {
+                    if (oldPlaces.includes(place)) {
                         checkbox.checked = true;
                     }
 
                     const span = document.createElement('span');
-                    span.className = 'ml-2 text-xs font-medium text-gray-700';
-                    span.textContent = market;
+                    span.className = 'text-xs text-gray-700';
+                    span.textContent = place;
 
                     label.appendChild(checkbox);
                     label.appendChild(span);
@@ -182,8 +192,10 @@
                 });
             }
 
-            selectEl.addEventListener('change', updateCheckboxes);
-            updateCheckboxes();
+            supplierSelect.addEventListener('change', updateSellingPlaces);
+            if (supplierSelect.value) {
+                updateSellingPlaces();
+            }
         });
     </script>
 </x-app-layout>

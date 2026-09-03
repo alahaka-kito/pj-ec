@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\OAuthController;
 use App\Http\Middleware\CheckGoogleLogin;
 use App\Http\Controllers\SupplierMasterController;
 use App\Http\Controllers\ProductMasterController;
+use App\Http\Controllers\SalesMasterController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -46,4 +47,9 @@ Route::middleware(['auth', 'verified', CheckGoogleLogin::class])->group(function
     Route::resource('product-master', ProductMasterController::class)->parameters([
         'product-master' => 'seq'
     ]);
+
+    // 販売マスタ用商品検索API
+    Route::get('/sales-master/search-products', [SalesMasterController::class, 'searchProducts'])->name('sales-master.search-products');
+    //販売マスタ
+    Route::resource('sales-master', SalesMasterController::class);
 });

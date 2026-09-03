@@ -19,6 +19,7 @@ class ProductMaster extends Model
         'product_management_code',
         'supplier_product_name',
         'buying_price',
+        'stock',
         'size',
         'cool_delivery_service',
         'time_delivery_service',
@@ -28,6 +29,8 @@ class ProductMaster extends Model
 
     protected $casts = [
         'selling_places'        => 'array',
+        'buying_price'          => 'integer',
+        'stock'                 => 'integer',
         'size'                  => 'integer',
         'cool_delivery_service' => 'integer',
         'time_delivery_service' => 'integer',
