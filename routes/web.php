@@ -2,12 +2,14 @@
 
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Http;
 use App\Http\Controllers\ShippingInstructionController;
 use App\Http\Controllers\Auth\OAuthController;
 use App\Http\Middleware\CheckGoogleLogin;
 use App\Http\Controllers\SupplierMasterController;
 use App\Http\Controllers\ProductMasterController;
 use App\Http\Controllers\SalesMasterController;
+use App\Http\Controllers\TikTokController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -26,6 +28,10 @@ Route::middleware('auth')->group(function () {
 // 社内用OAuth認証ルート
 Route::get('/auth/redirect', [OAuthController::class, 'redirectToProvider'])->name('oauth.redirect');
 Route::get('/auth/callback', [OAuthController::class, 'handleProviderCallback'])->name('oauth.callback');
+
+// TikTok Shop OAuth用ルート（TikTokからの外部コールバックを受けるため認証外へ配置）
+Route::get('/tiktok/auth', [TikTokController::class, 'redirectToAuth'])->name('tiktok.auth');
+Route::get('/tiktok/callback', [TikTokController::class, 'handleCallback'])->name('tiktok.callback');
 
 require __DIR__.'/auth.php';
 
@@ -52,4 +58,7 @@ Route::middleware(['auth', 'verified', CheckGoogleLogin::class])->group(function
     Route::get('/sales-master/search-products', [SalesMasterController::class, 'searchProducts'])->name('sales-master.search-products');
     //販売マスタ
     Route::resource('sales-master', SalesMasterController::class);
+
+    // ★TikTok 注文データ確認用API
+    Route::get('/tiktok/orders', [TikTokController::class, 'getOrders'])->name('tiktok.orders');
 });
