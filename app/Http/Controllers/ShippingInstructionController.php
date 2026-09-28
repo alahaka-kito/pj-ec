@@ -6,43 +6,71 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use App\Services\CsvTransformers\TikTokTransformer;
+use App\Services\CsvTransformers\AmazonTransformer;
+use App\Services\CsvTransformers\CsvTransformerInterface;
 
+/**
+ * 出荷指示データ変換管理コントローラー
+ */
 class ShippingInstructionController extends Controller
 {
-    // 画面表示
+    /**
+     * 出荷指示データ管理画面の表示
+     *
+     * @return \Illuminate\View\View
+     */
     public function index()
     {
         return view('shipping_instruction_data');
     }
 
-    // CSVアップロード処理
+    /**
+     * 各モールの注文データファイル（CSV / TXT）のアップロード処理
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function upload(Request $request)
     {
-        if (!$request->hasFile('csv_file')) {
+        if (!$request->hasFile('file')) {
             return redirect()->back()->with('error', 'ファイルが選択されていません。');
         }
 
-        $file = $request->file('csv_file');
+        $type = $request->input('type', 'tiktok');
+        $file = $request->file('file');
 
-        if ($file->getClientOriginalName() !== 'tiktokdata.csv') {
-            return redirect()->back()->with('error', 'ファイル名が正しくありません。tiktokdata.csv をアップロードしてください。');
+        if ($type === 'amazon') {
+            if ($file->getClientOriginalName() !== 'amazon.txt') {
+                return redirect()->back()->with('error', 'ファイル名が正しくありません。amazon.txt をアップロードしてください。');
+            }
+            $file->move(storage_path('app'), 'amazon.txt');
+            return redirect()->back()->with('success', 'amazon.txt のアップロードが完了しました。');
+        } else {
+            if ($file->getClientOriginalName() !== 'tiktokdata.csv') {
+                return redirect()->back()->with('error', 'ファイル名が正しくありません。tiktokdata.csv をアップロードしてください。');
+            }
+            $file->move(storage_path('app'), 'tiktokdata.csv');
+            return redirect()->back()->with('success', 'tiktokdata.csv のアップロードが完了しました。');
         }
-
-        $file->move(storage_path('app'), 'tiktokdata.csv');
-
-        return redirect()->back()->with('success', 'tiktokdata.csv のアップロードが完了しました。');
     }
 
     /**
-     * メイン処理：CSV変換＆ダウンロード
+     * メイン処理：ヤマト産直CSVデータの変換およびダウンロードストリーム処理
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse|StreamedResponse
      */
-    public function process()
+    public function process(Request $request)
     {
-        $inputFullPath = storage_path('app/tiktokdata.csv');
+        $type = $request->input('type', 'tiktok');
+        $filename = ($type === 'amazon') ? 'amazon.txt' : 'tiktokdata.csv';
+        $delimiter = ($type === 'amazon') ? "\t" : ",";
+
+        $inputFullPath = storage_path('app/' . $filename);
         $templateFullPath = storage_path('app/template/yamato_sanchoku.csv');
 
         if (!file_exists($inputFullPath)) {
-            return redirect()->back()->with('error', 'アップロードされた tiktokdata.csv が見つかりません。先にアップロードを行ってください。');
+            return redirect()->back()->with('error', "アップロードされた {$filename} が見つかりません。先にアップロードを行ってください。");
         }
         if (!file_exists($templateFullPath)) {
             return redirect()->back()->with('error', 'テンプレートファイルが存在しません。');
@@ -59,7 +87,7 @@ class ShippingInstructionController extends Controller
         fwrite($stream, $fileContent);
         rewind($stream);
         $sourceRows = [];
-        while (($data = fgetcsv($stream)) !== false) {
+        while (($data = fgetcsv($stream, 0, $delimiter)) !== false) {
             $sourceRows[] = array_map(function($value) {
                 return trim(str_replace("\t", "", $value));
             }, $data);
@@ -67,7 +95,7 @@ class ShippingInstructionController extends Controller
         fclose($stream);
 
         if (count($sourceRows) < 1) {
-            return redirect()->back()->with('error', 'CSVファイルの中身が空です。');
+            return redirect()->back()->with('error', 'ファイルの中身が空です。');
         }
 
         $sourceHeader = $sourceRows[0];
@@ -121,7 +149,6 @@ class ShippingInstructionController extends Controller
             $yamatoIdxMap[$info['col']] = ($idx !== false) ? $idx : $info['default_idx'];
         }
 
-        // 発荷主コードの列インデックス（K列 / 10番目）を特定
         $hatsuIdx = 10;
         foreach ($templateHeader as $k => $v) {
             if (str_contains($v, '発荷主コード')) {
@@ -132,17 +159,17 @@ class ShippingInstructionController extends Controller
 
         $dbData = DB::table('yamato_sanchoku_shipping_instruction_data')->first();
         
-        // 汎用区分０１が『0000』として確実に出力されるよう、プログラム側でも文字列整形を徹底ガード
         if ($dbData && isset($dbData->general_purpose_division_01)) {
             $dbData->general_purpose_division_01 = str_pad((string)$dbData->general_purpose_division_01, 4, '0', STR_PAD_LEFT);
         }
         
-        // hatsu_ninushi_data マスタを全件取得
         $hatsuMaster = DB::table('hatsu_ninushi_data')->get();
 
-        // 4. トランスフォーマーの呼び出し
+        // 4. ポリモーフィズムによるトランスフォーマーの切替呼び出し
         $maxColumns = max(100, count($templateHeader));
-        $transformer = new TikTokTransformer(); 
+        
+        /** @var CsvTransformerInterface $transformer */
+        $transformer = ($type === 'amazon') ? new AmazonTransformer() : new TikTokTransformer();
         
         $convertedRows = $transformer->transform(
             $sourceDataRows, 
@@ -159,8 +186,9 @@ class ShippingInstructionController extends Controller
             unlink($inputFullPath);
         }
 
-        // 6. CSVダウンロードストリームの作成（ヘッダーなし・値のある項目は""・NULLは囲みなし）
-        $fileName = 'yamato_sanchoku_' . date('Ymd') . '.csv';
+        // 6. CSVダウンロードストリームの作成
+        $prefix = ($type === 'amazon') ? 'yamato_sanchoku_amazon_' : 'yamato_sanchoku_tiktok_';
+        $outputFileName = $prefix . date('Ymd') . '.csv';
 
         $response = new StreamedResponse(function() use ($convertedRows) {
             $stream = fopen('php://output', 'w');
@@ -182,7 +210,6 @@ class ShippingInstructionController extends Controller
                 fwrite($fs, $line);
             };
 
-            // ヘッダー行は出力せず、データ行のみ出力
             foreach ($convertedRows as $row) {
                 $writeYamatoCsvRow($stream, $row);
             }
@@ -191,7 +218,7 @@ class ShippingInstructionController extends Controller
         });
 
         $response->headers->set('Content-Type', 'text/csv');
-        $response->headers->set('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+        $response->headers->set('Content-Disposition', 'attachment; filename="' . $outputFileName . '"');
 
         return $response;
     }

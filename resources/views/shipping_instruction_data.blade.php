@@ -18,39 +18,87 @@
             </div>
         @endif
 
-        <div class="border-2 border-orange-500 rounded-lg p-8 min-h-[600px] bg-white">
+        <div class="border-2 border-orange-500 rounded-lg p-8 min-h-[600px] bg-white space-y-12">
             
-            <!-- セクション1：処理データアップロード -->
-            <div class="mb-12">
-                <div class="inline-block bg-orange-500 text-white px-6 py-2 text-lg font-bold rounded-t-md mb-0">
-                    処理データアップロード
+            <!-- TikTokエリア -->
+            <div>
+                <h2 class="text-lg font-bold text-gray-700 mb-4 pb-1 border-b">TikTok</h2>
+                
+                <!-- セクション1：TikTok 処理データアップロード -->
+                <div class="mb-8">
+                    <div class="inline-block bg-orange-500 text-white px-6 py-2 text-lg font-bold rounded-t-md mb-0">
+                        処理データアップロード
+                    </div>
+                    <div class="border-t border-orange-500 pt-6">
+                        <form action="{{ route('shipping-instruction.upload') }}" method="POST" enctype="multipart/form-data" class="flex items-center space-x-4">
+                            @csrf
+                            <input type="hidden" name="type" value="tiktok">
+                            <div class="relative">
+                                <input type="file" name="file" required class="border border-gray-400 rounded px-4 py-2 bg-gray-50 text-gray-700 text-sm hover:bg-gray-100 cursor-pointer">
+                            </div>
+                            <button type="submit" class="border border-gray-400 rounded px-6 py-2 bg-gray-50 text-gray-700 text-sm font-medium hover:bg-gray-100 shadow-sm">
+                                アップロード
+                            </button>
+                            <span class="text-sm text-gray-600 pl-4">※ファイル名はtiktokdata.csv</span>
+                        </form>
+                    </div>
                 </div>
-                <div class="border-t border-orange-500 pt-6">
-                    <form action="{{ route('shipping-instruction.upload') }}" method="POST" enctype="multipart/form-data" class="flex items-center space-x-4">
-                        @csrf
-                        <div class="relative">
-                            <input type="file" name="csv_file" required class="border border-gray-400 rounded px-4 py-2 bg-gray-50 text-gray-700 text-sm hover:bg-gray-100 cursor-pointer">
-                        </div>
-                        <button type="submit" class="border border-gray-400 rounded px-6 py-2 bg-gray-50 text-gray-700 text-sm font-medium hover:bg-gray-100 shadow-sm">
-                            アップロード
-                        </button>
-                        <span class="text-sm text-gray-600 pl-4">※ファイル名はtiktokdata.csv</span>
-                    </form>
+
+                <!-- セクション2：TikTok データ抽出 -->
+                <div>
+                    <div class="inline-block bg-orange-500 text-white px-10 py-2 text-lg font-bold rounded-t-md mb-0">
+                        データ抽出
+                    </div>
+                    <div class="border-t border-orange-500 pt-6">
+                        <form action="{{ route('shipping-instruction.process') }}" method="POST">
+                            @csrf
+                            <input type="hidden" name="type" value="tiktok">
+                            <button type="submit" class="border border-gray-400 rounded px-8 py-2 bg-gray-50 text-gray-700 text-sm font-medium hover:bg-gray-100 shadow-sm">
+                                処理実行
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
 
-            <!-- セクション2：データ抽出 -->
+            <!-- Amazonエリア -->
             <div>
-                <div class="inline-block bg-orange-500 text-white px-10 py-2 text-lg font-bold rounded-t-md mb-0">
-                    データ抽出
+                <h2 class="text-lg font-bold text-gray-700 mb-4 pb-1 border-b">Amazon</h2>
+                
+                <!-- セクション1：Amazon 処理データアップロード -->
+                <div class="mb-8">
+                    <div class="inline-block bg-orange-500 text-white px-6 py-2 text-lg font-bold rounded-t-md mb-0">
+                        処理データアップロード
+                    </div>
+                    <div class="border-t border-orange-500 pt-6">
+                        <form action="{{ route('shipping-instruction.upload') }}" method="POST" enctype="multipart/form-data" class="flex items-center space-x-4">
+                            @csrf
+                            <input type="hidden" name="type" value="amazon">
+                            <div class="relative">
+                                <input type="file" name="file" required class="border border-gray-400 rounded px-4 py-2 bg-gray-50 text-gray-700 text-sm hover:bg-gray-100 cursor-pointer">
+                            </div>
+                            <button type="submit" class="border border-gray-400 rounded px-6 py-2 bg-gray-50 text-gray-700 text-sm font-medium hover:bg-gray-100 shadow-sm">
+                                アップロード
+                            </button>
+                            <span class="text-sm text-gray-600 pl-4">※ファイル名はamazon.txt</span>
+                        </form>
+                    </div>
                 </div>
-                <div class="border-t border-orange-500 pt-6">
-                    <form action="{{ route('shipping-instruction.process') }}" method="POST">
-                        @csrf
-                        <button type="submit" class="border border-gray-400 rounded px-8 py-2 bg-gray-50 text-gray-700 text-sm font-medium hover:bg-gray-100 shadow-sm">
-                            処理実行
-                        </button>
-                    </form>
+
+                <!-- セクション2：Amazon データ抽出 -->
+                <div>
+                    <div class="inline-block bg-orange-500 text-white px-10 py-2 text-lg font-bold rounded-t-md mb-0">
+                        データ抽出
+                    </div>
+                    <div class="border-t border-orange-500 pt-6">
+                        <form action="{{ route('shipping-instruction.process') }}" method="POST">
+                            @csrf
+                            <input type="hidden" name="type" value="amazon">
+                            <button type="submit" class="border border-gray-400 rounded px-8 py-2 bg-gray-50 text-gray-700 text-sm font-medium hover:bg-gray-100 shadow-sm">
+                                処理実行
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
 
