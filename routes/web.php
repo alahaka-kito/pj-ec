@@ -10,6 +10,11 @@ use App\Http\Controllers\SupplierMasterController;
 use App\Http\Controllers\ProductMasterController;
 use App\Http\Controllers\SalesMasterController;
 use App\Http\Controllers\TikTokController;
+use Inertia\Inertia;
+
+Route::get('/react-test', function () {
+    return Inertia::render('ReactTest');
+});
 
 Route::get('/', function () {
     return view('welcome');
