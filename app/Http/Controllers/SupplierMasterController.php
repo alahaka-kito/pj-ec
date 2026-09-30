@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\SupplierMaster;
 use App\Http\Requests\SupplierMasterRequest;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class SupplierMasterController extends Controller
 {
@@ -23,7 +24,10 @@ class SupplierMasterController extends Controller
         // 1ページあたり15件でペジネーション
         $suppliers = $query->paginate(15);
 
-        return view('supplier-master.index', compact('suppliers'));
+        return Inertia::render('SupplierMaster/Index', [
+            'suppliers' => $suppliers,
+            'filters' => $request->only('search_company'),
+        ]);
     }
 
     /**
@@ -31,7 +35,7 @@ class SupplierMasterController extends Controller
      */
     public function create()
     {
-        return view('supplier-master.create');
+        return Inertia::render('SupplierMaster/Form', ['supplier' => null]);
     }
 
     /**
@@ -59,7 +63,7 @@ class SupplierMasterController extends Controller
     {
         $supplier = SupplierMaster::findOrFail($seq);
 
-        return view('supplier-master.show', compact('supplier'));
+        return Inertia::render('SupplierMaster/Show', ['supplier' => $supplier]);
     }
 
     /**
@@ -69,7 +73,7 @@ class SupplierMasterController extends Controller
     {
         $supplier = SupplierMaster::findOrFail($seq);
 
-        return view('supplier-master.edit', compact('supplier'));
+        return Inertia::render('SupplierMaster/Form', ['supplier' => $supplier]);
     }
 
     /**
