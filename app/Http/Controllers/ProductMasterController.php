@@ -7,8 +7,8 @@ use App\Models\SupplierMaster;
 use App\Http\Requests\ProductMasterRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
+use Inertia\Inertia;
 
 /**
  * Class ProductMasterController
@@ -25,7 +25,7 @@ class ProductMasterController extends Controller
      * @param \Illuminate\Http\Request $request 検索パラメータ（management_code, product_management_code, supplier_product_name）
      * @return \Illuminate\View\View
      */
-    public function index(Request $request): View
+    public function index(Request $request)
     {
         // クエリビルダを初期化
         $query = ProductMaster::query();
@@ -48,7 +48,10 @@ class ProductMasterController extends Controller
         // seqの降順で並び替えて20件ずつページネーション取得
         $products = $query->orderBy('seq', 'desc')->paginate(20);
 
-        return view('product-master.index', compact('products'));
+        return Inertia::render('ProductMaster/Index', [
+            'products' => $products,
+            'filters' => $request->only('management_code', 'product_management_code', 'supplier_product_name'),
+        ]);
     }
 
     /**
@@ -56,13 +59,16 @@ class ProductMasterController extends Controller
      *
      * @return \Illuminate\View\View
      */
-    public function create(): View
+    public function create()
     {
         // 仕入先管理コードの一覧と、JavaScript連動用の販売先データを取得
         $suppliers = SupplierMaster::all();
         $supplierSellingPlaces = $suppliers->pluck('selling_places', 'management_code');
 
-        return view('product-master.create', compact('suppliers', 'supplierSellingPlaces'));
+        return Inertia::render('ProductMaster/Form', [
+            'product' => null,
+            'suppliers' => $suppliers->map(fn ($supplier) => $supplier->only('management_code', 'company_name', 'selling_places'))->values(),
+        ]);
     }
 
     /**
@@ -104,10 +110,10 @@ class ProductMasterController extends Controller
      * @param int $seq 商品マスタの主キー(seq)
      * @return \Illuminate\View\View
      */
-    public function show($seq): View
+    public function show($seq)
     {
-        $product = ProductMaster::findOrFail($seq);
-        return view('product-master.show', compact('product'));
+        $product = ProductMaster::with('supplier')->findOrFail($seq);
+        return Inertia::render('ProductMaster/Show', ['product' => $product]);
     }
 
     /**
@@ -116,13 +122,16 @@ class ProductMasterController extends Controller
      * @param int $seq 商品マスタの主キー(seq)
      * @return \Illuminate\View\View
      */
-    public function edit($seq): View
+    public function edit($seq)
     {
         $product = ProductMaster::findOrFail($seq);
         $suppliers = SupplierMaster::all();
         $supplierSellingPlaces = $suppliers->pluck('selling_places', 'management_code');
 
-        return view('product-master.edit', compact('product', 'suppliers', 'supplierSellingPlaces'));
+        return Inertia::render('ProductMaster/Form', [
+            'product' => $product,
+            'suppliers' => $suppliers->map(fn ($supplier) => $supplier->only('management_code', 'company_name', 'selling_places'))->values(),
+        ]);
     }
 
     /**
