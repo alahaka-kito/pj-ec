@@ -8,8 +8,8 @@ use App\Http\Requests\SalesMasterRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
-use Illuminate\View\View;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 /**
  * Class SalesMasterController
@@ -27,7 +27,7 @@ class SalesMasterController extends Controller
      * @param Request $request 検索条件（商品名等）を含むリクエストオブジェクト
      * @return View 販売マスタ一覧のビュー
      */
-    public function index(Request $request): View
+    public function index(Request $request)
     {
         $query = SalesMaster::withCount('variations');
 
@@ -36,9 +36,12 @@ class SalesMasterController extends Controller
             $query->where('product_name', 'like', '%' . $request->product_name . '%');
         }
 
-        $salesMasters = $query->orderBy('id', 'desc')->paginate(20);
+        $salesMasters = $query->orderBy('id', 'desc')->paginate(20)->withQueryString();
 
-        return view('sales-master.index', compact('salesMasters'));
+        return Inertia::render('SalesMaster/Index', [
+            'salesMasters' => $salesMasters,
+            'filters' => $request->only('product_name'),
+        ]);
     }
 
     /**
@@ -46,10 +49,10 @@ class SalesMasterController extends Controller
      *
      * @return View 販売新規登録のビュー
      */
-    public function create(): View
+    public function create()
     {
-        $productMasters = ProductMaster::all(['product_management_code', 'supplier_product_name']);
-        return view('sales-master.create', compact('productMasters'));
+        $productMasters = ProductMaster::all(['product_management_code', 'supplier_product_name', 'stock']);
+        return Inertia::render('SalesMaster/Form', ['salesMaster' => null, 'productMasters' => $productMasters]);
     }
 
     /**
@@ -98,10 +101,10 @@ class SalesMasterController extends Controller
      * @param int|string $id 販売マスタID
      * @return View 販売詳細のビュー
      */
-    public function show($id): View
+    public function show($id)
     {
         $salesMaster = SalesMaster::with('variations.products.productMaster')->findOrFail($id);
-        return view('sales-master.show', compact('salesMaster'));
+        return Inertia::render('SalesMaster/Show', ['salesMaster' => $salesMaster]);
     }
 
     /**
@@ -110,11 +113,11 @@ class SalesMasterController extends Controller
      * @param int|string $id 販売マスタID
      * @return View 販売編集のビュー
      */
-    public function edit($id): View
+    public function edit($id)
     {
         $salesMaster = SalesMaster::with('variations.products')->findOrFail($id);
-        $productMasters = ProductMaster::all(['product_management_code', 'supplier_product_name']);
-        return view('sales-master.edit', compact('salesMaster', 'productMasters'));
+        $productMasters = ProductMaster::all(['product_management_code', 'supplier_product_name', 'stock']);
+        return Inertia::render('SalesMaster/Form', compact('salesMaster', 'productMasters'));
     }
 
     /**
