@@ -96,6 +96,13 @@
                                     販売マスタ
                                 </span>
                             </a>
+                            <a href="{{ route('shipper-code.index') }}" 
+                               class="group w-44 p-4 bg-white border border-gray-200 hover:border-slate-400 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center relative overflow-hidden">
+                                <div class="absolute top-0 left-0 w-1 h-full bg-slate-600"></div>
+                                <span class="text-base font-bold text-gray-800 group-hover:text-slate-700 transition-colors">
+                                    発荷主コード
+                                </span>
+                            </a>
                         </div>
                     </div>
                 @endif
