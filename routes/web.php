@@ -9,6 +9,7 @@ use App\Http\Middleware\CheckGoogleLogin;
 use App\Http\Controllers\SupplierMasterController;
 use App\Http\Controllers\ProductMasterController;
 use App\Http\Controllers\SalesMasterController;
+use App\Http\Controllers\ShipperCodeController;
 use App\Http\Controllers\TikTokController;
 use Inertia\Inertia;
 
@@ -63,6 +64,12 @@ Route::middleware(['auth', 'verified', CheckGoogleLogin::class])->group(function
     Route::get('/sales-master/search-products', [SalesMasterController::class, 'searchProducts'])->name('sales-master.search-products');
     //販売マスタ
     Route::resource('sales-master', SalesMasterController::class);
+
+    // 発荷主コード
+    Route::post('/shipper-code/import', [ShipperCodeController::class, 'import'])->name('shipper-code.import');
+    Route::resource('shipper-code', ShipperCodeController::class)->except(['show'])->parameters([
+        'shipper-code' => 'seq'
+    ]);
 
     // ★TikTok 注文データ確認用API
     Route::get('/tiktok/orders', [TikTokController::class, 'getOrders'])->name('tiktok.orders');
