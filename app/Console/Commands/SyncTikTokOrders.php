@@ -69,7 +69,7 @@ class SyncTikTokOrders extends Command
         $messageLines = $newOrderIds !== []
             ? array_merge(['新規注文があります。'], $newOrderIds)
             : ['新規注文がありません。'];
-        $title = 'テストTikTok注文確認';
+        $title = 'TikTok注文確認';
 
         $sent = $slack->posttoslack($messageLines, $title);
         if (!$sent) {
