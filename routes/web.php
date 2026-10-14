@@ -39,6 +39,9 @@ Route::get('/auth/callback', [OAuthController::class, 'handleProviderCallback'])
 Route::get('/tiktok/auth', [TikTokController::class, 'redirectToAuth'])->name('tiktok.auth');
 Route::get('/tiktok/callback', [TikTokController::class, 'handleCallback'])->name('tiktok.callback');
 
+// ★TikTok 注文データ確認用API
+Route::get('/tiktok/orders', [TikTokController::class, 'getOrders'])->name('tiktok.orders');
+
 require __DIR__.'/auth.php';
 
 // ログイン中のユーザーのみアクセス可能
@@ -71,6 +74,4 @@ Route::middleware(['auth', 'verified', CheckGoogleLogin::class])->group(function
         'shipper-code' => 'seq'
     ]);
 
-    // ★TikTok 注文データ確認用API
-    Route::get('/tiktok/orders', [TikTokController::class, 'getOrders'])->name('tiktok.orders');
 });

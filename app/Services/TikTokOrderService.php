@@ -11,7 +11,7 @@ class TikTokOrderService
     /**
      * 注文一覧を取得して整形・返却する
      */
-    public function fetchFormattedOrders()
+    public function fetchFormattedOrders(int $days = 1)
     {
         // 1. DBから最新のトークン情報を取得
         $tokenRow = DB::table('tiktok_tokens')->latest('updated_at')->first();
@@ -49,7 +49,7 @@ class TikTokOrderService
 
         // 過去90日間の注文を対象に指定
         $postBody = [
-            'create_time_ge' => strtotime('-90 days'),
+            'create_time_ge' => strtotime("-{$days} days"),
             'create_time_le' => time(),
         ];
 
@@ -70,8 +70,17 @@ class TikTokOrderService
 
         Log::info('TikTok Search Orders Response:', ['body' => $resData]);
 
-        if (isset($resData['data']['orders']) && !empty($resData['data']['orders'])) {
+        if (isset($resData['data']['orders']) && is_array($resData['data']['orders'])) {
             return $resData['data']['orders'];
+        }
+
+        // 注文が0件の場合、TikTok APIはordersを省略してtotal_countだけ返すことがある。
+        if (
+            isset($resData['code'], $resData['data']['total_count'])
+            && (int) $resData['code'] === 0
+            && (int) $resData['data']['total_count'] === 0
+        ) {
+            return [];
         }
 
         return [
