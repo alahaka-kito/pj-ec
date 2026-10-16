@@ -97,6 +97,14 @@ class TikTokOrderService
     {
         $expireAt = strtotime($tokenRow->access_token_expire_at ?? '1970-01-01');
 
+        // 以前の期限計算ミスで極端な未来日になったデータは、期限切れとして更新を試みる。
+        if ($expireAt > time() + (5 * 365 * 24 * 60 * 60)) {
+            Log::warning('保存されているTikTokアクセストークン期限が不正な未来日です。トークンを更新します。', [
+                'access_token_expire_at' => $tokenRow->access_token_expire_at,
+            ]);
+            $expireAt = 0;
+        }
+
         // 有効期限が残り5分未満の場合、またはすでに切れている場合に自動更新を実行
         if (time() >= ($expireAt - 300)) {
             Log::info('TikTok access_token matched refresh threshold. Refreshing token...');
@@ -117,11 +125,14 @@ class TikTokOrderService
             if (isset($data['data']['access_token'])) {
                 $newTokenData = $data['data'];
 
-                $accessExpireIn  = $newTokenData['access_token_expire_in'] ?? 86400;
-                $refreshExpireIn = $newTokenData['refresh_token_expire_in'] ?? 2592000;
-
-                $accessExpireAt  = date('Y-m-d H:i:s', time() + $accessExpireIn);
-                $refreshExpireAt = date('Y-m-d H:i:s', time() + $refreshExpireIn);
+                $accessExpireAt = $this->toExpiryDateTime(
+                    $newTokenData['access_token_expire_in'] ?? null,
+                    86400
+                );
+                $refreshExpireAt = $this->toExpiryDateTime(
+                    $newTokenData['refresh_token_expire_in'] ?? null,
+                    2592000
+                );
 
                 // DB内のトークン情報を最新に更新
                 DB::table('tiktok_tokens')
@@ -138,9 +149,25 @@ class TikTokOrderService
                 return DB::table('tiktok_tokens')->where('id', $tokenRow->id)->first();
             } else {
                 Log::error('Failed to auto-refresh TikTok access token', ['response' => $data]);
+                $message = $data['message'] ?? 'TikTokから更新後のアクセストークンが返されませんでした。';
+                throw new \RuntimeException('TikTokアクセストークンの自動更新に失敗しました: '.$message);
             }
         }
 
         return $tokenRow;
+    }
+
+    /**
+     * TikTokの期限値を日時文字列に変換する。Unix時刻ならそのまま、残り秒数なら現在時刻に加算する。
+     */
+    private function toExpiryDateTime($expirationValue, int $fallbackSeconds): string
+    {
+        $expiration = is_numeric($expirationValue) ? (int) $expirationValue : 0;
+
+        if ($expiration > 1000000000) {
+            return date('Y-m-d H:i:s', $expiration);
+        }
+
+        return date('Y-m-d H:i:s', time() + ($expiration > 0 ? $expiration : $fallbackSeconds));
     }
 }
