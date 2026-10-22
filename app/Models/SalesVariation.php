@@ -14,6 +14,7 @@ class SalesVariation extends Model
     protected $fillable = [
         'sales_master_id',
         'variation_name',
+        'sku_id',
         'shipping_size',
         'cool_delivery_service',
         'time_delivery_service',

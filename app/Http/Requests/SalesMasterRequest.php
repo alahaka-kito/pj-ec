@@ -20,12 +20,14 @@ class SalesMasterRequest extends FormRequest
             'drive_path' => ['nullable', 'string', 'max:512'],
             'variations' => ['required', 'array', 'min:1'],
             'variations.*.variation_name' => ['required', 'string', 'max:255'],
+            'variations.*.sku_id' => ['required', 'string', 'max:255'],
             'variations.*.shipping_size' => ['nullable', 'integer', 'in:60,80,100,120,140,160,180,200'],
             'variations.*.cool_delivery_service' => ['nullable', 'boolean'],
             'variations.*.time_delivery_service' => ['nullable', 'boolean'],
             'variations.*.products' => ['required', 'array', 'min:1'],
             'variations.*.products.*.product_management_code' => ['required', 'string', 'max:50', 'exists:product_master,product_management_code'],
             'variations.*.products.*.quantity' => ['required', 'integer', 'min:1'],
+            'variations.*.products.*.variation_stock' => ['required', 'integer', 'min:0'],
         ];
     }
 
@@ -38,9 +40,11 @@ class SalesMasterRequest extends FormRequest
             'drive_path' => 'ドライブパス',
             'variations' => 'バリエーション',
             'variations.*.variation_name' => 'バリエーション名',
+            'variations.*.sku_id' => 'SKU ID',
             'variations.*.shipping_size' => '配送サイズ',
             'variations.*.products.*.product_management_code' => '対応商品管理コード',
             'variations.*.products.*.quantity' => '使用個数',
+            'variations.*.products.*.variation_stock' => 'バリエーション在庫数',
         ];
     }
 

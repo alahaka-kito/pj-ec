@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use App\Services\TikTokOrderService;
+use App\Services\TikTokInventoryService;
 
 class TikTokController extends Controller
 {
@@ -159,6 +160,22 @@ class TikTokController extends Controller
             return response()->json($orders, 200, [], JSON_UNESCAPED_UNICODE);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * TikTok Shopの商品とSKUごとの在庫情報を取得してJSONで返す。
+     */
+    public function getInventory(TikTokInventoryService $service)
+    {
+        try {
+            $inventory = $service->fetchInventory();
+
+            return response()->json($inventory, 200, [], JSON_UNESCAPED_UNICODE);
+        } catch (\Throwable $exception) {
+            Log::error('TikTok在庫情報の取得に失敗しました。', ['exception' => $exception->getMessage()]);
+
+            return response()->json(['error' => $exception->getMessage()], 500, [], JSON_UNESCAPED_UNICODE);
         }
     }
 }
