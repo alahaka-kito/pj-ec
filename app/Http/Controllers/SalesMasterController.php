@@ -75,6 +75,7 @@ class SalesMasterController extends Controller
                 foreach ($request->variations as $vData) {
                     $variation = $salesMaster->variations()->create([
                         'variation_name'        => $vData['variation_name'],
+                        'sku_id'                => $vData['sku_id'] ?? '',
                         'shipping_size'         => $vData['shipping_size'] ?? null,
                         'cool_delivery_service' => isset($vData['cool_delivery_service']) ? 1 : 0,
                         'time_delivery_service' => isset($vData['time_delivery_service']) ? 1 : 0,
@@ -85,6 +86,7 @@ class SalesMasterController extends Controller
                             $variation->products()->create([
                                 'product_management_code' => $pData['product_management_code'],
                                 'quantity'                => $pData['quantity'],
+                                'variation_stock'         => $pData['variation_stock'],
                             ]);
                         }
                     }
@@ -146,6 +148,7 @@ class SalesMasterController extends Controller
                 foreach ($request->variations as $vData) {
                     $variation = $salesMaster->variations()->create([
                         'variation_name'        => $vData['variation_name'],
+                        'sku_id'                => $vData['sku_id'] ?? '',
                         'shipping_size'         => $vData['shipping_size'] ?? null,
                         'cool_delivery_service' => isset($vData['cool_delivery_service']) ? 1 : 0,
                         'time_delivery_service' => isset($vData['time_delivery_service']) ? 1 : 0,
@@ -156,6 +159,7 @@ class SalesMasterController extends Controller
                             $variation->products()->create([
                                 'product_management_code' => $pData['product_management_code'],
                                 'quantity'                => $pData['quantity'],
+                                'variation_stock'         => $pData['variation_stock'],
                             ]);
                         }
                     }

@@ -91,9 +91,12 @@ class TikTokOrderService
     }
 
     /**
-     * トークンの有効期限をチェックし、切れている場合は refresh_token で自動更新する
+     * API呼び出し前にアクセストークンの有効期限を確認し、必要なら更新する。
+     *
+     * @param object $tokenRow tiktok_tokensテーブルから取得したトークン行
+     * @return object 有効なアクセストークンを持つトークン行
      */
-    private function ensureValidAccessToken($tokenRow)
+    public function ensureValidAccessToken($tokenRow)
     {
         $expireAt = strtotime($tokenRow->access_token_expire_at ?? '1970-01-01');
 

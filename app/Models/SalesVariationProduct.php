@@ -15,6 +15,7 @@ class SalesVariationProduct extends Model
         'sales_variation_id',
         'product_management_code',
         'quantity',
+        'variation_stock',
     ];
 
     public function variation()
