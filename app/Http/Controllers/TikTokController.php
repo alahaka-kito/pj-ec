@@ -55,6 +55,8 @@ class TikTokController extends Controller
             if (isset($data['data']['access_token'])) {
                 $tokenData   = $data['data'];
                 $accessToken = $tokenData['access_token'];
+                $grantedScopes = $tokenData['granted_scopes'] ?? $tokenData['scope'] ?? null;
+                Log::info('TikTok認可で付与されたスコープ', ['granted_scopes' => $grantedScopes]);
 
                 // 2. ショップ一覧から shop_cipher を取得（open-api.tiktokglobalshop.com を指定）
                 $shopCipher = $this->fetchShopCipher($appKey, $appSecret, $accessToken);
@@ -92,6 +94,7 @@ class TikTokController extends Controller
                         'seller_name'            => $tokenData['seller_name'] ?? '',
                         'shop_cipher'            => $shopCipher,
                         'access_token_expire_at' => $accessExpireAt,
+                        'granted_scopes'         => $grantedScopes,
                     ]
                 ], 200, [], JSON_UNESCAPED_UNICODE);
             }
@@ -174,6 +177,22 @@ class TikTokController extends Controller
             return response()->json($inventory, 200, [], JSON_UNESCAPED_UNICODE);
         } catch (\Throwable $exception) {
             Log::error('TikTok在庫情報の取得に失敗しました。', ['exception' => $exception->getMessage()]);
+
+            return response()->json(['error' => $exception->getMessage()], 500, [], JSON_UNESCAPED_UNICODE);
+        }
+    }
+
+    /**
+     * システム側のバリエーション在庫をTikTok Shopへ反映する。
+     */
+    public function pushInventory(TikTokInventoryService $service)
+    {
+        try {
+            $result = $service->pushInventory();
+
+            return response()->json($result, 200, [], JSON_UNESCAPED_UNICODE);
+        } catch (\Throwable $exception) {
+            Log::error('TikTok在庫の反映に失敗しました。', ['exception' => $exception->getMessage()]);
 
             return response()->json(['error' => $exception->getMessage()], 500, [], JSON_UNESCAPED_UNICODE);
         }
