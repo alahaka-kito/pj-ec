@@ -42,6 +42,7 @@ Route::get('/tiktok/callback', [TikTokController::class, 'handleCallback'])->nam
 // ★TikTok 注文データ確認用API
 Route::get('/tiktok/orders', [TikTokController::class, 'getOrders'])->name('tiktok.orders');
 Route::get('/tiktok/inventory', [TikTokController::class, 'getInventory'])->name('tiktok.inventory');
+Route::post('/tiktok/inventory/push', [TikTokController::class, 'pushInventory'])->name('tiktok.inventory.push');
 
 require __DIR__.'/auth.php';
 

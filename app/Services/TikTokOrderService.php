@@ -124,6 +124,9 @@ class TikTokOrderService
 
             $data = $response->json();
             Log::info('TikTok Refresh Token Response:', $data ?? []);
+            Log::info('TikTokトークン更新後のスコープ', [
+                'granted_scopes' => $data['data']['granted_scopes'] ?? $data['data']['scope'] ?? null,
+            ]);
 
             if (isset($data['data']['access_token'])) {
                 $newTokenData = $data['data'];

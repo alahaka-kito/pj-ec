@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
- * TikTok ShopからSKU在庫情報を取得してコンソールに表示するコマンド。
+ * TikTok ShopからSKU在庫情報を取得して商品マスタへ反映するコマンド。
  */
 class SyncTikTokInventory extends Command
 {
