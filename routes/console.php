@@ -8,4 +8,5 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::command('tiktok:sync-orders')->hourly();
+Schedule::command('tiktok-sync-orders')->hourly();
+Schedule::command('amazon-sync-orders')->hourly();
