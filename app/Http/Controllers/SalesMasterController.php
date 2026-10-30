@@ -51,7 +51,7 @@ class SalesMasterController extends Controller
      */
     public function create()
     {
-        $productMasters = ProductMaster::all(['product_management_code', 'supplier_product_name', 'stock']);
+        $productMasters = ProductMaster::selectRaw('seq, product_management_code_tiktok, product_management_code_amazon, product_management_code_tiktok as product_management_code, supplier_product_name, stock')->get();
         return Inertia::render('SalesMaster/Form', ['salesMaster' => null, 'productMasters' => $productMasters]);
     }
 
@@ -75,7 +75,9 @@ class SalesMasterController extends Controller
                 foreach ($request->variations as $vData) {
                     $variation = $salesMaster->variations()->create([
                         'variation_name'        => $vData['variation_name'],
-                        'sku_id'                => $vData['sku_id'] ?? '',
+                        'tikTok_sku_id'         => $vData['tikTok_sku_id'] ?? '',
+                        'amazon_sku_id'         => $vData['amazon_sku_id'] ?? '',
+                        'variation_stock_linking' => filter_var($vData['variation_stock_linking'] ?? false, FILTER_VALIDATE_BOOLEAN) ? 1 : 0,
                         'shipping_size'         => $vData['shipping_size'] ?? null,
                         'cool_delivery_service' => isset($vData['cool_delivery_service']) ? 1 : 0,
                         'time_delivery_service' => isset($vData['time_delivery_service']) ? 1 : 0,
@@ -84,9 +86,9 @@ class SalesMasterController extends Controller
                     if (isset($vData['products']) && is_array($vData['products'])) {
                         foreach ($vData['products'] as $pData) {
                             $variation->products()->create([
-                                'product_management_code' => $pData['product_management_code'],
-                                'quantity'                => $pData['quantity'],
-                                'variation_stock'         => $pData['variation_stock'],
+                                'product_master_seq' => $pData['product_master_seq'],
+                                'quantity'           => $pData['quantity'],
+                                'variation_stock'    => $pData['variation_stock'],
                             ]);
                         }
                     }
@@ -118,7 +120,7 @@ class SalesMasterController extends Controller
     public function edit($id)
     {
         $salesMaster = SalesMaster::with('variations.products')->findOrFail($id);
-        $productMasters = ProductMaster::all(['product_management_code', 'supplier_product_name', 'stock']);
+        $productMasters = ProductMaster::selectRaw('seq, product_management_code_tiktok, product_management_code_amazon, product_management_code_tiktok as product_management_code, supplier_product_name, stock')->get();
         return Inertia::render('SalesMaster/Form', compact('salesMaster', 'productMasters'));
     }
 
@@ -148,7 +150,9 @@ class SalesMasterController extends Controller
                 foreach ($request->variations as $vData) {
                     $variation = $salesMaster->variations()->create([
                         'variation_name'        => $vData['variation_name'],
-                        'sku_id'                => $vData['sku_id'] ?? '',
+                        'tikTok_sku_id'         => $vData['tikTok_sku_id'] ?? '',
+                        'amazon_sku_id'         => $vData['amazon_sku_id'] ?? '',
+                        'variation_stock_linking' => filter_var($vData['variation_stock_linking'] ?? false, FILTER_VALIDATE_BOOLEAN) ? 1 : 0,
                         'shipping_size'         => $vData['shipping_size'] ?? null,
                         'cool_delivery_service' => isset($vData['cool_delivery_service']) ? 1 : 0,
                         'time_delivery_service' => isset($vData['time_delivery_service']) ? 1 : 0,
@@ -157,9 +161,9 @@ class SalesMasterController extends Controller
                     if (isset($vData['products']) && is_array($vData['products'])) {
                         foreach ($vData['products'] as $pData) {
                             $variation->products()->create([
-                                'product_management_code' => $pData['product_management_code'],
-                                'quantity'                => $pData['quantity'],
-                                'variation_stock'         => $pData['variation_stock'],
+                                'product_master_seq' => $pData['product_master_seq'],
+                                'quantity'           => $pData['quantity'],
+                                'variation_stock'    => $pData['variation_stock'],
                             ]);
                         }
                     }
@@ -199,8 +203,9 @@ class SalesMasterController extends Controller
         }
 
         $products = ProductMaster::where('supplier_product_name', 'like', "%{$keyword}%")
-            ->orWhere('product_management_code', 'like', "%{$keyword}%")
-            ->select('product_management_code', 'supplier_product_name')
+            ->orWhere('product_management_code_tiktok', 'like', "%{$keyword}%")
+            ->orWhere('product_management_code_amazon', 'like', "%{$keyword}%")
+            ->select(['seq', 'product_management_code_tiktok', 'product_management_code_amazon', 'supplier_product_name', 'stock'])
             ->limit(10)
             ->get();
 

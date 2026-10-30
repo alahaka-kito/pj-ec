@@ -37,13 +37,15 @@ class ProductMasterRequest extends FormRequest
         return [
             'image'                   => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'management_code'         => 'required|string|exists:supplier_master,management_code',
-            'product_management_code' => [
-                'required',
-                'string',
-                'max:50',
-                // product_master テーブルの product_management_code カラムで重複チェック
-                // 更新時は自分自身の seq を除外
-                Rule::unique('product_master', 'product_management_code')->ignore($productSeq, 'seq'),
+            'product_management_code_tiktok' => [
+                Rule::requiredIf(fn () => in_array('Tiktok', (array) $this->input('selling_places', []), true)),
+                'nullable', 'string', 'max:50',
+                Rule::unique('product_master', 'product_management_code_tiktok')->ignore($productSeq, 'seq'),
+            ],
+            'product_management_code_amazon' => [
+                Rule::requiredIf(fn () => in_array('Amazon', (array) $this->input('selling_places', []), true)),
+                'nullable', 'string', 'max:50',
+                Rule::unique('product_master', 'product_management_code_amazon')->ignore($productSeq, 'seq'),
             ],
             'supplier_product_name'   => 'required|string|max:255',
             'buying_price'            => 'required|integer|min:0',
@@ -66,20 +68,23 @@ class ProductMasterRequest extends FormRequest
         return [
             // 必須入力（required）のメッセージ定義
             'management_code.required'         => ':attributeは必須項目です。',
-            'product_management_code.required' => ':attributeは必須項目です。',
+            'product_management_code_tiktok.required' => ':attributeは必須項目です。',
+            'product_management_code_amazon.required' => ':attributeは必須項目です。',
             'supplier_product_name.required'   => ':attributeは必須項目です。',
             'buying_price.required'            => ':attributeは必須項目です。',
             'size.required'                    => ':attributeは必須項目です。',
 
             // 重複チェック（unique）のメッセージ定義
-            'product_management_code.unique'   => '指定された:attributeはすでに登録されています。',
+            'product_management_code_tiktok.unique' => '指定された:attributeはすでに登録されています。',
+            'product_management_code_amazon.unique' => '指定された:attributeはすでに登録されています。',
 
             // その他の形式チェック用の日本語メッセージ
             'image.image'                      => '商品画像には画像ファイルを指定してください。',
             'image.mimes'                      => '商品画像は jpeg, png, jpg, gif 形式のファイルを指定してください。',
             'image.max'                        => '商品画像は2MB以下のファイルを指定してください。',
             'management_code.exists'           => '選択された仕入先管理コードは仕入先マスタに存在しません。',
-            'product_management_code.max'      => '商品管理コードは50文字以内で入力してください。',
+            'product_management_code_tiktok.max' => '商品管理コードは50文字以内で入力してください。',
+            'product_management_code_amazon.max' => '商品管理コードは50文字以内で入力してください。',
             'supplier_product_name.max'        => '仕入先商品名は255文字以内で入力してください。',
             'buying_price.integer'             => '仕入れ値は整数で入力してください。',
             'buying_price.min'                 => '仕入れ値は0以上の数値を入力してください。',
@@ -101,7 +106,8 @@ class ProductMasterRequest extends FormRequest
         return [
             'image'                   => '商品画像',
             'management_code'         => '仕入先管理コード',
-            'product_management_code' => '商品管理コード',
+            'product_management_code_tiktok' => '商品管理コード(Tiktok)',
+            'product_management_code_amazon' => '商品管理コード(Amazon)',
             'supplier_product_name'   => '仕入先商品名',
             'buying_price'            => '仕入れ値',
             'stock'                   => '在庫数',
