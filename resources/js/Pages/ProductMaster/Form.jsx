@@ -9,7 +9,8 @@ export default function Form({ product, suppliers = [] }) {
     const form = useForm({
         image: null,
         management_code: product?.management_code ?? '',
-        product_management_code: product?.product_management_code ?? '',
+        product_management_code_tiktok: product?.product_management_code_tiktok ?? '',
+        product_management_code_amazon: product?.product_management_code_amazon ?? '',
         supplier_product_name: product?.supplier_product_name ?? '',
         buying_price: product?.buying_price ?? '', stock: product?.stock ?? 0, size: product?.size ?? '',
         cool_delivery_service: Boolean(product?.cool_delivery_service), time_delivery_service: Boolean(product?.time_delivery_service),
@@ -33,7 +34,8 @@ export default function Form({ product, suppliers = [] }) {
             <div className="overflow-hidden rounded border border-gray-200 shadow-sm"><table className="w-full border-collapse text-left text-sm"><tbody>
                 <tr className="border-b"><th className="w-1/3 border-r bg-gray-50 p-3">商品画像</th><td className="p-3"><input type="file" accept="image/*" onChange={event => form.setData('image', event.target.files[0] ?? null)} className="text-xs file:mr-4 file:rounded file:border-0 file:bg-orange-50 file:px-4 file:py-1.5 file:font-semibold file:text-orange-700 hover:file:bg-orange-100" />{product?.image_path && <img src={product.image_path} alt="現在の商品画像" className="mt-3 h-20 w-20 rounded border object-cover" />}{form.errors.image && <p className="mt-1 text-xs text-red-600">{form.errors.image}</p>}</td></tr>
                 <tr className="border-b"><th className="border-r bg-gray-50 p-3">仕入先管理コード</th><td className="p-3"><select required value={form.data.management_code} onChange={event => { form.setData('management_code', event.target.value); form.setData('selling_places', []); }} className={`${fieldClass} max-w-md`}><option value="">選択してください</option>{suppliers.map(supplier => <option key={supplier.management_code} value={supplier.management_code}>{supplier.management_code}：{supplier.company_name}</option>)}</select>{form.errors.management_code && <p className="mt-1 text-xs text-red-600">{form.errors.management_code}</p>}</td></tr>
-                <tr className="border-b"><th className="border-r bg-gray-50 p-3">商品管理コード</th><td className="p-3">{textField('product_management_code', '', { required: true, maxLength: 50 })}</td></tr>
+                <tr className="border-b"><th className="border-r bg-gray-50 p-3">商品管理コード(Tiktok)</th><td className="p-3">{textField('product_management_code_tiktok', '', { required: form.data.selling_places.includes('Tiktok'), maxLength: 50 })}</td></tr>
+                <tr className="border-b"><th className="border-r bg-gray-50 p-3">商品管理コード(Amazon)</th><td className="p-3">{textField('product_management_code_amazon', '', { required: form.data.selling_places.includes('Amazon'), maxLength: 50 })}</td></tr>
                 <tr className="border-b"><th className="border-r bg-gray-50 p-3">仕入先商品名</th><td className="p-3">{textField('supplier_product_name', '', { required: true, maxLength: 255 })}</td></tr>
                 <tr className="border-b"><th className="border-r bg-gray-50 p-3">仕入価格</th><td className="p-3">{textField('buying_price', '', { type: 'number', min: 0, required: true })}{form.errors.buying_price && <p className="text-xs text-red-600">{form.errors.buying_price}</p>}</td></tr>
                 <tr className="border-b"><th className="border-r bg-gray-50 p-3">在庫数</th><td className="p-3">{textField('stock', '', { type: 'number', min: 0 })}{form.errors.stock && <p className="text-xs text-red-600">{form.errors.stock}</p>}</td></tr>

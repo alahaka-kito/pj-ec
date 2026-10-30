@@ -16,7 +16,8 @@ class ProductMaster extends Model
     protected $fillable = [
         'image_path',
         'management_code',
-        'product_management_code',
+        'product_management_code_tiktok',
+        'product_management_code_amazon',
         'supplier_product_name',
         'buying_price',
         'stock',

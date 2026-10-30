@@ -8,12 +8,14 @@ use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 /**
- * TikTok Shopの商品一覧からSKU在庫数を取得し、商品マスタへ反映するサービス。
+ * TikTok Shopの在庫取得と同期を行うサービス。
+ *
+ * SKU在庫を取得し、バリエーションの在庫連動設定に応じて商品在庫または
+ * バリエーション在庫へ反映する。
  */
 class TikTokInventoryService
 {
     private const API_PATH = '/product/202309/products/search';
-
     /**
      * 注文同期サービスのトークン更新処理を共有する。
      */
@@ -70,8 +72,10 @@ class TikTokInventoryService
     }
 
     /**
-     * TikTokのSKU在庫とシステムのバリエーション在庫の差分から商品在庫を増減し、
-     * 残った商品在庫と使用数量で各バリエーション在庫を再計算する。
+     * TikTok ShopからSKU在庫を取得し、バリエーションの在庫連動設定に応じて反映する。
+     * 連動有効時は使用数量を加味した差分を商品マスタ在庫へ反映する。連動無効時は
+     * 商品マスタ在庫を変更せず、取得したSKU在庫数をバリエーション在庫へ直接反映する。
+     * 販売バリエーションに紐づかないTikTok商品は、従来どおり商品マスタ在庫を同期する。
      *
      * @return array{products: array<int, array<string, mixed>>, updated_products: int, updated_variations: int}
      */
@@ -88,35 +92,31 @@ class TikTokInventoryService
         }
         $skuIds = array_values(array_unique($skuIds));
 
-        $variations = DB::table('sales_variations')
-            ->whereIn('sku_id', $skuIds)
-            ->get(['id', 'sku_id']);
+        $variations = DB::table('sales_variations')->whereIn('tikTok_sku_id', $skuIds)
+            ->get(['id', 'tikTok_sku_id', 'variation_stock_linking']);
         $variationsBySku = [];
         foreach ($variations as $variation) {
-            $variationsBySku[(string) $variation->sku_id] = $variation;
+            $variationsBySku[(string) $variation->tikTok_sku_id] = $variation;
         }
 
         $variationProducts = $variations->isEmpty()
             ? collect()
-            : DB::table('sales_variation_products')
-                ->whereIn('sales_variation_id', $variations->pluck('id')->all())
-                ->get(['id', 'sales_variation_id', 'product_management_code', 'quantity', 'variation_stock']);
+            : DB::table('sales_variation_products as svp')
+                ->join('product_master as pm', 'pm.seq', '=', 'svp.product_master_seq')
+                ->whereIn('svp.sales_variation_id', $variations->pluck('id')->all())
+                ->get(['svp.id', 'svp.sales_variation_id', 'pm.product_management_code_tiktok as product_management_code', 'svp.quantity', 'svp.variation_stock']);
         $productsByVariation = $variationProducts->groupBy('sales_variation_id');
 
         $productCodes = $variationProducts->pluck('product_management_code')
-            ->merge(collect($products)->pluck('id'))
-            ->filter()
-            ->map(static fn ($code) => (string) $code)
-            ->unique()
-            ->values()
-            ->all();
-        $masterStocks = DB::table('product_master')
-            ->whereNull('deleted_at')
-            ->whereIn('product_management_code', $productCodes)
-            ->get(['product_management_code', 'stock'])
-            ->mapWithKeys(static fn ($row) => [(string) $row->product_management_code => (int) $row->stock]);
+            ->merge(collect($products)->pluck('id'))->filter()
+            ->map(static fn ($code) => (string) $code)->unique()->values()->all();
+        $masterStocks = DB::table('product_master')->whereNull('deleted_at')
+            ->whereIn('product_management_code_tiktok', $productCodes)
+            ->get(['product_management_code_tiktok', 'stock'])
+            ->mapWithKeys(static fn ($row) => [(string) $row->product_management_code_tiktok => (int) $row->stock]);
 
         $stockDeltas = [];
+        $directVariationStocks = [];
         foreach ($products as $product) {
             $productId = (string) ($product['id'] ?? '');
             foreach (($product['skus'] ?? []) as $sku) {
@@ -125,26 +125,29 @@ class TikTokInventoryService
                     continue;
                 }
 
-                $skuId = (string) ($sku['id'] ?? '');
-                $variation = $variationsBySku[$skuId] ?? null;
+                $variation = $variationsBySku[(string) ($sku['id'] ?? '')] ?? null;
                 if ($variation) {
                     $items = $productsByVariation->get($variation->id, collect());
                     if ($items->isEmpty()) {
                         continue;
                     }
 
-                    $currentVariationStock = (int) $items->min('variation_stock');
-                    $delta = $skuStock - $currentVariationStock;
-                    if ($delta === 0) {
+                    if (!(bool) $variation->variation_stock_linking) {
+                        foreach ($items as $item) {
+                            $directVariationStocks[(int) $item->id] = $skuStock;
+                        }
                         continue;
                     }
 
+                    $delta = $skuStock - (int) $items->min('variation_stock');
+                    if ($delta === 0) {
+                        continue;
+                    }
                     foreach ($items as $item) {
                         $code = (string) $item->product_management_code;
                         if ($code !== $productId || !$masterStocks->has($code)) {
                             continue;
                         }
-
                         $stockDeltas[$code] = ($stockDeltas[$code] ?? 0)
                             + ($delta * max(1, (int) $item->quantity));
                     }
@@ -154,7 +157,6 @@ class TikTokInventoryService
                 if ($productId === '' || !$masterStocks->has($productId)) {
                     continue;
                 }
-
                 $delta = $skuStock - (int) $masterStocks->get($productId);
                 if ($delta !== 0) {
                     $stockDeltas[$productId] = ($stockDeltas[$productId] ?? 0) + $delta;
@@ -164,8 +166,7 @@ class TikTokInventoryService
 
         $updatedProducts = 0;
         $updatedVariations = 0;
-        DB::transaction(function () use ($stockDeltas, $masterStocks, &$updatedProducts, &$updatedVariations): void {
-            $affectedCodes = [];
+        DB::transaction(function () use ($stockDeltas, $directVariationStocks, $masterStocks, &$updatedProducts, &$updatedVariations): void {
             foreach ($stockDeltas as $productCode => $delta) {
                 $productCode = (string) $productCode;
                 $currentStock = (int) $masterStocks->get($productCode, 0);
@@ -173,62 +174,54 @@ class TikTokInventoryService
                 if ($newStock === $currentStock) {
                     continue;
                 }
-
                 $updatedProducts += DB::table('product_master')
-                    ->whereRaw('CAST(product_management_code AS CHAR) = ?', [$productCode])
+                    ->whereRaw('CAST(product_management_code_tiktok AS CHAR) = ?', [$productCode])
                     ->whereNull('deleted_at')
                     ->update(['stock' => $newStock, 'updated_at' => now()]);
                 $masterStocks[$productCode] = $newStock;
-                $affectedCodes[] = $productCode;
             }
-
-            $updatedVariations += $this->recalculateVariationStocks($affectedCodes, $masterStocks);
+            foreach ($directVariationStocks as $id => $stock) {
+                $updatedVariations += DB::table('sales_variation_products')->where('id', $id)
+                    ->update(['variation_stock' => $stock, 'updated_at' => now()]);
+            }
         });
 
-        return [
-            'products' => $products,
-            'updated_products' => $updatedProducts,
-            'updated_variations' => $updatedVariations,
-        ];
+        return ['products' => $products, 'updated_products' => $updatedProducts, 'updated_variations' => $updatedVariations];
     }
 
     /**
-     * 更新後の商品在庫数と各構成商品の使用数量から、関連バリエーション在庫を再計算する。
-     * 使用数量が商品在庫数を上回る場合は在庫を0にする。
+     * 商品マスタの確定済み在庫数をもとに、在庫連動が有効なバリエーション在庫を再配分する。
+     * 構成商品の在庫数を使用数量で割り、構成商品ごとのバリエーション在庫数を算出する。
      *
-     * @param array<int, string> $productCodes 在庫数が変わった商品管理コード
-     * @param \Illuminate\Support\Collection $masterStocks 商品管理コードごとの最新商品在庫
-     * @return int 更新されたバリエーション商品行数
+     * @return int Number of variation-product rows updated.
      */
-    private function recalculateVariationStocks(array $productCodes, $masterStocks): int
+    public function syncVariationStocks(): int
     {
-        $updated = 0;
-        foreach (array_unique($productCodes) as $productCode) {
-            $productCode = (string) $productCode;
-            $productStock = (int) $masterStocks->get($productCode, 0);
-            $items = DB::table('sales_variation_products')
-                ->whereRaw('CAST(product_management_code AS CHAR) = ?', [$productCode])
-                ->get(['id', 'quantity']);
+        $items = DB::table('sales_variation_products as svp')
+            ->join('sales_variations as sv', 'sv.id', '=', 'svp.sales_variation_id')
+            ->join('product_master as pm', 'pm.seq', '=', 'svp.product_master_seq')
+            ->where('sv.variation_stock_linking', 1)
+            ->whereNull('pm.deleted_at')
+            ->get(['svp.id', 'svp.quantity', 'pm.stock']);
 
+        $updated = 0;
+        DB::transaction(function () use ($items, &$updated): void {
             foreach ($items as $item) {
                 $usageQuantity = max(1, (int) $item->quantity);
-                $variationStock = intdiv($productStock, $usageQuantity);
-                $updated += DB::table('sales_variation_products')
-                    ->where('id', $item->id)
-                    ->update([
-                        'variation_stock' => $variationStock,
-                        'updated_at' => now(),
-                    ]);
+                $variationStock = intdiv(max(0, (int) $item->stock), $usageQuantity);
+                $updated += DB::table('sales_variation_products')->where('id', $item->id)
+                    ->update(['variation_stock' => $variationStock, 'updated_at' => now()]);
             }
-        }
+        });
 
         return $updated;
     }
 
+
     /**
      * 販売マスタのバリエーション在庫をTikTok ShopのSKU在庫へ反映する。
      *
-     * TikTokのSKU IDは sales_variations.sku_id と一致するものを優先し、
+     * TikTokのSKU IDは sales_variations.tikTok_sku_id と一致するものを優先し、
      * 見つからない場合は sales_variation_products.product_management_code でも照合する。
      * セットSKUは構成商品の variation_stock のうち最も少ない値を採用する。
      *
@@ -464,16 +457,17 @@ class TikTokInventoryService
         }
 
         $variations = DB::table('sales_variations')
-            ->whereIn('sku_id', $skuIds)
-            ->get(['id', 'sku_id']);
-        $variationProducts = DB::table('sales_variation_products')
+            ->whereIn('tikTok_sku_id', $skuIds)
+            ->get(['id', 'tikTok_sku_id']);
+        $variationProducts = DB::table('sales_variation_products as svp')
+            ->join('product_master as pm', 'pm.seq', '=', 'svp.product_master_seq')
             ->where(function ($query) use ($variations, $skuIds): void {
                 if ($variations->isNotEmpty()) {
                     $query->whereIn('sales_variation_id', $variations->pluck('id')->all());
                 }
-                $query->orWhereIn('product_management_code', $skuIds);
+                $query->orWhereIn('pm.product_management_code_tiktok', $skuIds);
             })
-            ->get(['sales_variation_id', 'product_management_code', 'variation_stock']);
+            ->get(['svp.sales_variation_id', 'pm.product_management_code_tiktok as product_management_code', 'svp.variation_stock']);
 
         $stocksBySku = [];
         foreach ($variations as $variation) {
@@ -485,7 +479,7 @@ class TikTokInventoryService
                 continue;
             }
 
-            $stocksBySku[(string) $variation->sku_id] = (int) $stocks->min();
+            $stocksBySku[(string) $variation->tikTok_sku_id] = (int) $stocks->min();
         }
 
         foreach ($variationProducts as $item) {

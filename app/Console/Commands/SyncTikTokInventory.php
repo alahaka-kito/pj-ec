@@ -33,6 +33,7 @@ class SyncTikTokInventory extends Command
         }
 
         $products = $result['products'];
+        $this->line(sprintf('Variation stock rows updated: %d', $result['updated_variations']));
         $rows = [];
         foreach ($products as $product) {
             foreach (($product['skus'] ?? []) as $sku) {
@@ -65,11 +66,7 @@ class SyncTikTokInventory extends Command
         }
 
         $this->info(sprintf('取得商品数: %d件、在庫行数: %d件', count($products), count($rows)));
-        $this->info(sprintf(
-            '商品マスタ更新数: %d件、バリエーション在庫更新数: %d件',
-            $result['updated_products'],
-            $result['updated_variations']
-        ));
+        $this->info(sprintf('商品マスタ更新数: %d件', $result['updated_products']));
         $this->table(['商品ID', '商品名', 'バリエーション名', 'SKU ID', 'seller_sku', '倉庫ID', '在庫数'], $rows);
 
         return self::SUCCESS;

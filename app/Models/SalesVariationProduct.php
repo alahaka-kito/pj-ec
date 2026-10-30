@@ -13,7 +13,7 @@ class SalesVariationProduct extends Model
 
     protected $fillable = [
         'sales_variation_id',
-        'product_management_code',
+        'product_master_seq',
         'quantity',
         'variation_stock',
     ];
@@ -25,10 +25,9 @@ class SalesVariationProduct extends Model
 
     /**
      * 商品マスタ（ProductMaster）とのリレーション
-     * product_management_code をキーにして結合
      */
     public function productMaster()
     {
-        return $this->belongsTo(ProductMaster::class, 'product_management_code', 'product_management_code');
+        return $this->belongsTo(ProductMaster::class, 'product_master_seq', 'seq');
     }
 }

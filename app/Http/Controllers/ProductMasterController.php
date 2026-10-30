@@ -37,7 +37,9 @@ class ProductMasterController extends Controller
 
         // 2. 商品管理コードで検索（部分一致）
         if ($request->filled('product_management_code')) {
-            $query->where('product_management_code', 'LIKE', '%' . $request->input('product_management_code') . '%');
+            $needle = $request->input('product_management_code');
+            $query->where(fn ($q) => $q->where('product_management_code_tiktok', 'LIKE', "%{$needle}%")
+                ->orWhere('product_management_code_amazon', 'LIKE', "%{$needle}%"));
         }
 
         // 3. 仕入先商品名で検索（部分一致）
@@ -80,6 +82,8 @@ class ProductMasterController extends Controller
     public function store(ProductMasterRequest $request): RedirectResponse
     {
         $validated = $request->validated();
+        $validated['product_management_code_tiktok'] = $validated['product_management_code_tiktok'] ?? '';
+        $validated['product_management_code_amazon'] = $validated['product_management_code_amazon'] ?? '';
         $validated['selling_places'] = $request->input('selling_places', []);
 
         // 在庫数が未入力の場合は0をセット
@@ -145,6 +149,8 @@ class ProductMasterController extends Controller
     {
         $product = ProductMaster::findOrFail($seq);
         $validated = $request->validated();
+        $validated['product_management_code_tiktok'] = $validated['product_management_code_tiktok'] ?? '';
+        $validated['product_management_code_amazon'] = $validated['product_management_code_amazon'] ?? '';
         $validated['selling_places'] = $request->input('selling_places', []);
 
         // 在庫数が未入力の場合は0をセット
