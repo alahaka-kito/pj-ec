@@ -53,6 +53,7 @@ return [
         'lwa_client_id' => env('AMAZON_LWA_CLIENT_ID'),
         'lwa_client_secret' => env('AMAZON_LWA_CLIENT_SECRET'),
         'refresh_token' => env('AMAZON_REFRESH_TOKEN'),
+        'seller_id' => env('AMAZON_SELLER_ID'),
         'marketplace_id' => env('AMAZON_MARKETPLACE_ID', 'A1VC38T7YXB528'),
         'endpoint' => env('AMAZON_SP_API_ENDPOINT', 'https://sellingpartnerapi-fe.amazon.com'),
     ],
