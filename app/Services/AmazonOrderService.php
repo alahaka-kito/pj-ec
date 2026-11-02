@@ -13,6 +13,154 @@ use RuntimeException;
 class AmazonOrderService
 {
     /**
+     * FBM出品の在庫数を出品SKUごとに取得する。
+     * Listings Items APIの検索上限に合わせてSKUを20件ずつ照合する。
+     *
+     * @param array<int, string> $sellerSkus Amazonの出品SKU
+     * @return array<int, array<string, mixed>> 在庫サマリー形式に整えたSKU別在庫
+     */
+    public function fetchSellerFulfilledInventories(array $sellerSkus): array
+    {
+        if ($sellerSkus === []) {
+            return [];
+        }
+
+        $config = config('services.amazon');
+        foreach (['lwa_client_id', 'lwa_client_secret', 'refresh_token', 'marketplace_id', 'seller_id', 'endpoint'] as $key) {
+            if (empty($config[$key])) {
+                throw new RuntimeException("Amazon SP-API configuration is missing: services.amazon.{$key} (AMAZON_SELLER_IDを確認してください)");
+            }
+        }
+
+        $accessToken = $this->getAccessToken($config);
+        $inventories = [];
+        foreach (array_chunk(array_values(array_unique($sellerSkus)), 20) as $skuBatch) {
+            $data = $this->get('/listings/2021-08-01/items/'.rawurlencode($config['seller_id']), [
+                'marketplaceIds' => [$config['marketplace_id']],
+                'identifiers' => $skuBatch,
+                'identifiersType' => 'SKU',
+                'includedData' => ['fulfillmentAvailability', 'summaries'],
+                'pageSize' => 20,
+            ], $accessToken, $config);
+
+            foreach (($data['items'] ?? []) as $item) {
+                $sku = (string) ($item['sku'] ?? '');
+                if ($sku === '') {
+                    continue;
+                }
+                foreach (($item['fulfillmentAvailability'] ?? []) as $availability) {
+                    if (($availability['fulfillmentChannelCode'] ?? null) !== 'DEFAULT') {
+                        continue;
+                    }
+                    if (is_numeric($availability['quantity'] ?? null)) {
+                        $inventories[] = [
+                            'sellerSku' => $sku,
+                            'productType' => $item['summaries'][0]['productType'] ?? 'PRODUCT',
+                            'inventoryDetails' => ['fulfillableQuantity' => (int) $availability['quantity']],
+                        ];
+                        break;
+                    }
+                }
+            }
+        }
+
+        return $inventories;
+    }
+
+    /**
+     * AmazonのFBM出品SKUに在庫数を送信する。
+     * Listings Items APIのPATCH結果を返し、APIエラー時は例外を送出する。
+     *
+     * @param string $sellerSku Amazon出品SKU
+     * @param string $productType Amazon商品タイプ
+     * @param int $quantity 設定する在庫数
+     * @return array<string, mixed> Amazonから返された更新結果
+     */
+    public function updateSellerFulfilledInventory(string $sellerSku, string $productType, int $quantity): array
+    {
+        $config = config('services.amazon');
+        foreach (['lwa_client_id', 'lwa_client_secret', 'refresh_token', 'marketplace_id', 'seller_id', 'endpoint'] as $key) {
+            if (empty($config[$key])) {
+                throw new RuntimeException("Amazon SP-API configuration is missing: services.amazon.{$key}");
+            }
+        }
+
+        $accessToken = $this->getAccessToken($config);
+        $path = '/listings/2021-08-01/items/'.rawurlencode($config['seller_id']).'/'.rawurlencode($sellerSku);
+        $queryString = $this->canonicalQuery(['marketplaceIds' => [$config['marketplace_id']]]);
+        $url = rtrim($config['endpoint'], '/').$path.'?'.$queryString;
+        $response = Http::withHeaders([
+            'x-amz-access-token' => $accessToken,
+            'Content-Type' => 'application/json',
+        ])->patch($url, [
+            'productType' => $productType !== '' ? $productType : 'PRODUCT',
+            'patches' => [[
+                'op' => 'replace',
+                'path' => '/attributes/fulfillment_availability',
+                'value' => [[
+                    'fulfillment_channel_code' => 'DEFAULT',
+                    'quantity' => max(0, $quantity),
+                ]],
+            ]],
+        ]);
+        $response->throw();
+        $data = $response->json();
+
+        return is_array($data) ? $data : [];
+    }
+
+    /**
+     * AmazonのFBA在庫サマリーをSKU指定で取得する。
+     * APIの上限に合わせてSKUを50件ずつ問い合わせ、ページング結果をまとめて返す。
+     *
+     * @param array<int, string> $sellerSkus 取得対象のAmazon SKU
+     * @return array<int, array<string, mixed>> SKUごとの在庫サマリー
+     */
+    public function fetchInventorySummaries(array $sellerSkus): array
+    {
+        if ($sellerSkus === []) {
+            return [];
+        }
+
+        $config = config('services.amazon');
+        foreach (['lwa_client_id', 'lwa_client_secret', 'refresh_token', 'marketplace_id', 'endpoint'] as $key) {
+            if (empty($config[$key])) {
+                throw new RuntimeException("Amazon SP-API configuration is missing: services.amazon.{$key}");
+            }
+        }
+
+        $accessToken = $this->getAccessToken($config);
+        $summaries = [];
+
+        foreach (array_chunk(array_values(array_unique($sellerSkus)), 50) as $skuBatch) {
+            $nextToken = null;
+            do {
+                $query = [
+                    'details' => 'true',
+                    'granularityType' => 'Marketplace',
+                    'granularityId' => $config['marketplace_id'],
+                    'marketplaceIds' => [$config['marketplace_id']],
+                    'sellerSkus' => $skuBatch,
+                ];
+                if ($nextToken !== null) {
+                    $query['nextToken'] = $nextToken;
+                }
+
+                $data = $this->get('/fba/inventory/v1/summaries', $query, $accessToken, $config);
+                $pageSummaries = $data['payload']['inventorySummaries'] ?? null;
+                if (!is_array($pageSummaries)) {
+                    throw new RuntimeException('Amazon SP-API returned invalid inventory summaries.');
+                }
+
+                array_push($summaries, ...$pageSummaries);
+                $nextToken = $data['pagination']['nextToken'] ?? null;
+            } while (is_string($nextToken) && $nextToken !== '');
+        }
+
+        return $summaries;
+    }
+
+    /**
      * 指定日数以内に作成された注文を取得し、各注文に商品情報を追加して返す。
      * SP-APIのページングにも対応する。
      *
@@ -151,10 +299,10 @@ class AmazonOrderService
         ksort($query);
         $pairs = [];
         foreach ($query as $key => $value) {
-            $values = is_array($value) ? $value : [$value];
-            foreach ($values as $item) {
-                $pairs[] = rawurlencode((string) $key).'='.rawurlencode((string) $item);
-            }
+            $encodedValue = is_array($value)
+                ? implode(',', array_map(static fn ($item) => (string) $item, $value))
+                : (string) $value;
+            $pairs[] = rawurlencode((string) $key).'='.rawurlencode($encodedValue);
         }
 
         return implode('&', $pairs);
