@@ -13,6 +13,135 @@ use RuntimeException;
 class AmazonOrderService
 {
     /**
+     * 出品中のAmazon商品情報をSP-APIから全ページ取得する。
+     *
+     * @return array<int, array<string, mixed>> 出品SKUごとの商品情報
+     */
+    public function fetchAllListings(): array
+    {
+        $config = config('services.amazon');
+        foreach (['lwa_client_id', 'lwa_client_secret', 'refresh_token', 'marketplace_id', 'seller_id', 'endpoint'] as $key) {
+            if (empty($config[$key])) {
+                throw new RuntimeException("Amazon SP-API configuration is missing: services.amazon.{$key}");
+            }
+        }
+
+        $accessToken = $this->getAccessToken($config);
+        $listings = [];
+        $pageToken = null;
+        do {
+            $query = [
+                'marketplaceIds' => [$config['marketplace_id']],
+                'includedData' => ['summaries', 'attributes', 'offers', 'fulfillmentAvailability', 'relationships'],
+                'pageSize' => 20,
+            ];
+            if ($pageToken !== null) {
+                $query['pageToken'] = $pageToken;
+            }
+
+            $data = $this->get(
+                '/listings/2021-08-01/items/' . rawurlencode($config['seller_id']),
+                $query,
+                $accessToken,
+                $config
+            );
+            $items = $data['items'] ?? null;
+            if (!is_array($items)) {
+                throw new RuntimeException('Amazon SP-API returned an invalid listings response.');
+            }
+            array_push($listings, ...$items);
+            $pageToken = $data['pagination']['nextToken'] ?? null;
+        } while (is_string($pageToken) && $pageToken !== '');
+
+        return $listings;
+    }
+
+    /**
+     * Product Type Definitions APIから配送テンプレートIDと表示名の対応を取得する。
+     *
+     * @param string $productType Amazon商品タイプ
+     * @return array<string, string> 配送テンプレートID => Seller Central上の表示名
+     */
+    public function fetchMerchantShippingTemplateNames(string $productType): array
+    {
+        $config = config('services.amazon');
+        foreach (['lwa_client_id', 'lwa_client_secret', 'refresh_token', 'marketplace_id', 'seller_id', 'endpoint'] as $key) {
+            if (empty($config[$key])) {
+                throw new RuntimeException("Amazon SP-API configuration is missing: services.amazon.{$key}");
+            }
+        }
+
+        $accessToken = $this->getAccessToken($config);
+        $definition = $this->get(
+            '/definitions/2020-09-01/productTypes/' . rawurlencode($productType),
+            [
+                'marketplaceIds' => [$config['marketplace_id']],
+                'sellerId' => $config['seller_id'],
+                'requirements' => 'LISTING',
+                'requirementsEnforced' => 'NOT_ENFORCED',
+                'locale' => 'ja_JP',
+            ],
+            $accessToken,
+            $config
+        );
+
+        $schemaUrl = $definition['schema']['link']['resource'] ?? null;
+        if (!is_string($schemaUrl) || $schemaUrl === '') {
+            return [];
+        }
+
+        $schemaResponse = Http::timeout(30)->get($schemaUrl);
+        $schemaResponse->throw();
+        $schema = $schemaResponse->json();
+        if (!is_array($schema)) {
+            return [];
+        }
+
+        $shippingGroup = $this->findShippingGroupDefinition($schema);
+        $enum = $shippingGroup['enum'] ?? [];
+        $enumNames = $shippingGroup['enumNames'] ?? [];
+        if (!is_array($enum) || !is_array($enumNames)) {
+            return [];
+        }
+
+        $templates = [];
+        foreach ($enum as $index => $templateId) {
+            $templateName = $enumNames[$index] ?? null;
+            if (is_string($templateId) && is_string($templateName)) {
+                $templates[$templateId] = $templateName;
+            }
+        }
+
+        return $templates;
+    }
+
+    /**
+     * 商品タイプ定義のJSON Schemaからmerchant_shipping_groupの値定義を探す。
+     *
+     * @param array<string, mixed> $schema Amazon商品タイプJSON Schema
+     * @return array<string, mixed> 配送テンプレートのenumとenumNames
+     */
+    private function findShippingGroupDefinition(array $schema): array
+    {
+        foreach ($schema as $key => $value) {
+            if ($key === 'merchant_shipping_group' && is_array($value)) {
+                $valueDefinition = $value['items']['properties']['value'] ?? [];
+                if (is_array($valueDefinition) && isset($valueDefinition['enum'], $valueDefinition['enumNames'])) {
+                    return $valueDefinition;
+                }
+            }
+            if (is_array($value)) {
+                $definition = $this->findShippingGroupDefinition($value);
+                if ($definition !== []) {
+                    return $definition;
+                }
+            }
+        }
+
+        return [];
+    }
+
+    /**
      * FBM出品の在庫数を出品SKUごとに取得する。
      * Listings Items APIの検索上限に合わせてSKUを20件ずつ照合する。
      *

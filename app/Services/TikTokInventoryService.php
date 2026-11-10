@@ -72,6 +72,45 @@ class TikTokInventoryService
     }
 
     /**
+     * TikTok Shopの全ステータスの商品を全ページ取得し、詳細情報を含めて返す。
+     *
+     * @return array<int, array<string, mixed>> 商品検索結果と商品詳細を統合した配列
+     */
+    public function fetchAllProducts(): array
+    {
+        $tokenRow = DB::table('tiktok_tokens')->latest('updated_at')->first();
+        if (!$tokenRow || empty($tokenRow->access_token)) {
+            throw new RuntimeException('TikTokのアクセストークンがありません。先に /tiktok/auth で認証してください。');
+        }
+
+        $tokenRow = $this->orders->ensureValidAccessToken($tokenRow);
+        $pageToken = null;
+        $products = [];
+
+        do {
+            $data = $this->searchProducts($tokenRow, $pageToken, true);
+            $pageProducts = $data['products'] ?? [];
+            if (!is_array($pageProducts)) {
+                throw new RuntimeException('TikTokの商品一覧レスポンスの形式が正しくありません。');
+            }
+
+            foreach ($pageProducts as $product) {
+                if (!empty($product['id'])) {
+                    $products[(string) $product['id']] = $product;
+                }
+            }
+            $pageToken = $data['next_page_token'] ?? null;
+        } while (!empty($pageToken));
+
+        $detailedProducts = [];
+        foreach ($products as $productId => $searchProduct) {
+            $detailedProducts[] = array_merge($searchProduct, $this->getProductDetails($tokenRow, $productId));
+        }
+
+        return $detailedProducts;
+    }
+
+    /**
      * TikTok ShopからSKU在庫を取得し、バリエーションの在庫連動設定に応じて反映する。
      * 連動有効時は使用数量を加味した差分を商品マスタ在庫へ反映する。連動無効時は
      * 商品マスタ在庫を変更せず、取得したSKU在庫数をバリエーション在庫へ直接反映する。
@@ -350,7 +389,7 @@ class TikTokInventoryService
      * @param string|null $pageToken 次ページ取得用トークン
      * @return array<string, mixed>
      */
-    private function searchProducts(object $tokenRow, ?string $pageToken): array
+    private function searchProducts(object $tokenRow, ?string $pageToken, bool $allStatuses = false): array
     {
         $appKey = config('services.tiktok.app_key');
         $appSecret = config('services.tiktok.app_secret');
@@ -370,7 +409,7 @@ class TikTokInventoryService
             $parameterString .= $key . $value;
         }
         // 稼働中商品のみ検索することで、削除・停止済み商品を一覧から除外する。
-        $body = json_encode(['status' => 'ACTIVATE'], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        $body = json_encode($allStatuses ? [] : ['status' => 'ACTIVATE'], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
         $signature = hash_hmac('sha256', $appSecret . self::API_PATH . $parameterString . $body . $appSecret, $appSecret);
         $query['sign'] = $signature;
 
