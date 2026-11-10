@@ -7,6 +7,10 @@ use App\Models\SupplierMaster;
 use App\Http\Requests\ProductMasterRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
+use App\Services\TikTokMasterRegistrationService;
+use App\Services\AmazonMasterRegistrationService;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 
@@ -54,6 +58,90 @@ class ProductMasterController extends Controller
             'products' => $products,
             'filters' => $request->only('management_code', 'product_management_code', 'supplier_product_name'),
         ]);
+    }
+
+    /**
+     * TikTok商品を商品マスタと販売マスタへ一括登録する。
+     *
+     * @param Request $request TikTok商品マスタIDを含むリクエスト
+     * @param TikTokMasterRegistrationService $registration 登録処理サービス
+     * @return RedirectResponse 商品一覧への遷移
+     */
+    public function registerTikTok(Request $request, TikTokMasterRegistrationService $registration): RedirectResponse
+    {
+        $validated = $request->validate(['tiktok_product_id' => ['nullable', 'integer', 'exists:tiktok_product_master,id']]);
+        try {
+            if (!empty($validated['tiktok_product_id'])) {
+                $registration->register((int) $validated['tiktok_product_id']);
+                $message = 'TikTok商品を商品マスタ・販売マスタへ登録しました。';
+            } else {
+                $result = $registration->registerAll();
+                $message = "TikTok Shop商品を取り込みました（新規 {$result['registered']}件、更新 {$result['updated']}件、スキップ {$result['skipped']}件）。";
+            }
+        } catch (\RuntimeException $exception) {
+            return redirect()->route('product-master.index')->with('error', $exception->getMessage());
+        }
+
+        return redirect()->route('product-master.index')->with('success', $message);
+    }
+
+    /**
+     * Amazon親子SKUを商品マスタと販売マスタへ一括登録する。
+     *
+     * @param AmazonMasterRegistrationService $registration Amazonマスタ登録サービス
+     * @return RedirectResponse 商品一覧への遷移
+     */
+    public function registerAmazon(AmazonMasterRegistrationService $registration): RedirectResponse
+    {
+        $result = $registration->registerAll();
+        $message = "Amazon商品を取り込みました（新規 {$result['registered']}件、更新 {$result['updated']}件、スキップ {$result['skipped']}件）。";
+
+        return redirect()->route('product-master.index')->with('success', $message);
+    }
+
+    /**
+     * TikTok商品マスタ同期コマンドを実行する。
+     *
+     * @return RedirectResponse 商品一覧へ実行結果を返す
+     */
+    public function syncTikTokProducts(): RedirectResponse
+    {
+        return $this->runProductSync('tiktok-sync-products', 'TikTok Shop');
+    }
+
+    /**
+     * Amazon商品マスタ同期コマンドを実行する。
+     *
+     * @return RedirectResponse 商品一覧へ実行結果を返す
+     */
+    public function syncAmazonProducts(): RedirectResponse
+    {
+        return $this->runProductSync('amazon-sync-products', 'Amazon Shop');
+    }
+
+    /**
+     * 指定された商品同期コマンドを実行し、成功または失敗を画面へ通知する。
+     *
+     * @param string $command 実行するArtisanコマンド名
+     * @param string $shopName 画面表示用のショップ名
+     * @return RedirectResponse 商品一覧への遷移
+     */
+    private function runProductSync(string $command, string $shopName): RedirectResponse
+    {
+        try {
+            // 商品同期は複数回の外部API通信を行うため、PHPの既定30秒制限を解除する。
+            set_time_limit(0);
+            $exitCode = Artisan::call($command);
+            if ($exitCode !== 0) {
+                return redirect()->route('product-master.index')->with('error', "{$shopName}商品取込みに失敗しました。ログを確認してください。");
+            }
+        } catch (\Throwable $exception) {
+            Log::error("{$shopName}商品同期コマンドの実行に失敗しました。", ['exception' => $exception->getMessage()]);
+
+            return redirect()->route('product-master.index')->with('error', "{$shopName}商品取込みに失敗しました。ログを確認してください。");
+        }
+
+        return redirect()->route('product-master.index')->with('success', "{$shopName}商品の取込みが完了しました。");
     }
 
     /**

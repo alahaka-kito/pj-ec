@@ -9,10 +9,17 @@ export default function Index({ products, filters = {}, flash = {} }) {
     const rows = products.data ?? [];
     return <Layout active="index">
         {flash.success && <div className="mb-5 rounded border-l-4 border-green-500 bg-green-50 p-4 font-bold text-green-700">{flash.success}</div>}
+        {flash.error && <div className="mb-5 rounded border-l-4 border-red-500 bg-red-50 p-4 font-bold text-red-700">{flash.error}</div>}
         <form onSubmit={event => { event.preventDefault(); router.get('/product-master', search, { preserveState: true }); }} className="mb-6 flex flex-wrap items-end gap-3 rounded border border-gray-200 bg-gray-50 p-4">
             {searchFields.map(([name, label]) => <label key={name} className="text-xs font-bold text-gray-600">{label}<input value={search[name]} onChange={event => setSearch({ ...search, [name]: event.target.value })} className="mt-1 block rounded border-gray-300 px-2 py-1.5 text-xs focus:border-orange-500 focus:ring-orange-500" /></label>)}
             <button className="rounded bg-orange-500 px-6 py-1.5 text-xs font-bold text-white">検索</button>
             {Object.values(search).some(Boolean) && <Link href="/product-master" className="rounded bg-slate-300 px-4 py-1.5 text-xs font-bold text-slate-700">クリア</Link>}
+            <div className="ml-auto flex flex-col gap-2">
+                <button type="button" onClick={() => { if (window.confirm('TikTok Shopから商品情報を取り込みますか？')) router.post('/product-master/sync-tiktok'); }} className="rounded bg-blue-600 px-5 py-1.5 text-xs font-bold text-white hover:bg-blue-700">TikTokShop商品取込み</button>
+                <button type="button" onClick={() => { if (window.confirm('Amazon Shopから商品情報を取り込みますか？')) router.post('/product-master/sync-amazon'); }} className="rounded bg-blue-600 px-5 py-1.5 text-xs font-bold text-white hover:bg-blue-700">AmazonShop商品取込み</button>
+                <button type="button" onClick={() => { if (window.confirm('未登録のTikTok Shop商品を商品マスタ・販売マスタへ取り込みますか？')) router.post('/product-master/register-tiktok'); }} className="rounded bg-orange-600 px-5 py-1.5 text-xs font-bold text-white hover:bg-orange-700">TikTokShop商品マスタ反映</button>
+                <button type="button" onClick={() => { if (window.confirm('Amazon Shop商品を商品マスタ・販売マスタへ取り込みますか？')) router.post('/product-master/register-amazon'); }} className="rounded bg-orange-600 px-5 py-1.5 text-xs font-bold text-white hover:bg-orange-700">AmazonShop商品マスタ反映</button>
+            </div>
         </form>
         <div className="overflow-x-auto rounded border border-gray-200 shadow-sm"><table className="w-full min-w-[1200px] table-fixed border-collapse text-left text-xs">
             <thead className="border-b bg-gray-50 text-gray-600"><tr>{['画像','仕入先コード','商品管理コード(Tiktok)','商品管理コード(Amazon)','仕入先商品名','仕入価格','在庫数','販売先','ドライブパス','操作'].map(label => <th key={label} className="p-3 font-medium">{label}</th>)}</tr></thead>

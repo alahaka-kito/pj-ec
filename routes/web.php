@@ -61,6 +61,10 @@ Route::middleware(['auth', 'verified', CheckGoogleLogin::class])->group(function
     ]);
 
     //商品マスタ
+    Route::post('/product-master/register-tiktok', [ProductMasterController::class, 'registerTikTok'])->name('product-master.register-tiktok');
+    Route::post('/product-master/register-amazon', [ProductMasterController::class, 'registerAmazon'])->name('product-master.register-amazon');
+    Route::post('/product-master/sync-tiktok', [ProductMasterController::class, 'syncTikTokProducts'])->name('product-master.sync-tiktok');
+    Route::post('/product-master/sync-amazon', [ProductMasterController::class, 'syncAmazonProducts'])->name('product-master.sync-amazon');
     Route::resource('product-master', ProductMasterController::class)->parameters([
         'product-master' => 'seq'
     ]);
